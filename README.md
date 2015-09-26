@@ -1,4 +1,4 @@
-# genspe
+# theta
 
 R library for calculation of species habitat specialization using co-occurrence data from large databases
 
