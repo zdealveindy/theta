@@ -1,10 +1,11 @@
 Package: theta
 Type: Package
 Title: Co-occurrence based measure of species habitat specialization
-Version: 0.7-26
-Date: 2015-09-27
+Version: 0.7-28
+Date: 2015-09-28
 Author: David Zeleny, partly based on published scripts by Fridley et al. 2007 and Zeleny 2009
 Maintainer: David Zeleny <zeleny.david@gmail.com>
 Description: Calculates theta - co-occurrence based measure of species habitat specialization, introduced by Fridley et al. 2007. The package contains function optimized for use on large datasets, and provides also modified script to generate simulated data for evaluation of different beta diversity metrics.
-Depends: parallel, vegan, betapart, ade4, RColorBrewer, vegetarian
+Depends: parallel, vegan, RColorBrewer, vegetarian 
+Impots: betapart, ade4, cati
 License: GPL-2

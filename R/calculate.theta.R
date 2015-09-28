@@ -1,6 +1,6 @@
 #' Co-occurrence based metric of species habitat specialization
 #' @description Set of functions for estimating species niche breadth based on compositional data using co-occurrence based \emph{theta} metric introduced by Fridley et al. (2007).
-#'  @author David Zeleny (zeleny.david@@gmail.com). Partly based on codes written by Jason Fridley (Fridley et al. 2007) and David Zeleny (Zeleny 2009), extended for other published algorithms and optimised for speed and applicability on large datasets. Function \code{beals.2} is based on function \code{beals} from \code{vegan}, written by Miquel De Caceres and Jari Oksanen.
+#' @author David Zeleny (zeleny.david@@gmail.com). Partly based on codes written by Jason Fridley (Fridley et al. 2007) and David Zeleny (Zeleny 2009), extended for other published algorithms and optimised for speed and applicability on large datasets. Function \code{beals.2} is based on function \code{beals} from \code{vegan}, written by Miquel De Caceres and Jari Oksanen.
 #' @param input.matrix Community data (\code{matrix} or \code{data.frame}, samples x species). If data are not presence-absence, the matrix will be automatically transformed into presence-absence and warning will be printed.
 #' @param species.data Species data (\code{matrix} or \code{data.frame}). If suplied, it should have at least two columns - the first containing species name, the second containing layer. 
 #' @param psample Minimal frequency of species. Habitat specialization will be calculated for species occurring in number of samples equal or higher than minimal frequency threshold. Default = \code{5}.
@@ -35,12 +35,7 @@
 #' \item \code{multiplicative}: Uses the multiplicative Whittaker's measure of beta diversity instead of the original additive measure, as suggested by Zeleny (2009). Modification of argument \code{q} calculates multiplicative beta diversity based on number equivalents (or number of effective species), allowing to give different weights to rare and abundant species (or species with low or high cover)(Jost 2007). \code{q = 0} calculates Whittaker's beta, which weights all species equally (meaning that rare species, which are the most susceptible to undersampling, are weighted equally to abundant species); \code{q = 1} calculates number equivalents for Shannon diversity and \code{q = 2} for Simspon diversity. Values of \code{q} different than zerro have sense only if sample data are NOT in presence-absence form and \code{pa.transform = FALSE}. Uses function \code{d} from the packages \code{vegetarian}.
 #' \item \code{beals}: Multiplicative beta on species pool. Algorithm suggested by Botta-Dukat (2012), calculating the beta diversity using species pool matrix instead of the original species data matrix. Species pool matrix is calculated using Beals smoothing method (invented by Ewald 2002). While the previous multiplicative beta diversity method gives unbiased results only in case of not-saturated communities, this method should give unbiased results also in case of saturated communities. See Zeleny (2009) and Botta-Dukat (2012) for detail discussion of this saturated/not-saturated communities issue. Argument \code{q} have no effect, since the recalculated species pool data are presence-absence only.
 #' \item \code{pairwise.jaccard}, \code{pairwise.sorensen}, \code{pairwise.simpson}, \code{multi.sorensen} and \code{multi.simpson}: Mean pairwise Jaccard, Sorensen and Simpson dissimilarity, and multiple Sorensen and Simpson dissimilarity based on reccomendations of Manthey & Fridley (2009). Authors suggested that neither the original additive algorithm (introduced by Fridley et al. 2007), neither the modified version using the multiplicative beta diversity (Zeleny 2009) is the best solution, and introduced other alternatives, using pairwise or multiple site beta diversity algorithm. Mean pairwise Jaccard dissimilarity (or Sorensen and Simpson, respectively) is based on calculating mean of Jaccard (or Sorensen and Simpson, respectively) dissimilarities among all pairs of samples in each subset, while multiple Sorensen (or Simpson, respectively) is using multiple-site Sorensen (or Simpson, respectively) algorithm introduced by Baselga et al. (2007). Multiple-site Sorensen index is a linear function of Whittaker's beta diversity.
-#' \item \code{rao}: Rao index of dissimilarity; this option has been introduced and used by Boulangeat et al. (2012). Advantage of Rao index is a possibility to incorporate known relationships among species using the among-species distance matrix. There are three versions of Rao index of dissimilarity:
-#' \itemize{
-#'  \item \code{rao1}: based on original formula from Rao (1982) \emph{beta.rao = gamma - mean.alpha}, where \emph{gamma} is Rao entropy index calculated from combined dataset and \emph{mean.alpha} is mean Rao entropy index for each sample in the community.
-#'  \item \code{rao2}: based on modified formula by de Bello et al. (2010) \emph{beta.rao = (gamma - mean.alpha)/(1 - mean.alpha)}
-#'  \item \code{rao3}: based on Chiu & Chao (2014) \emph{beta.rao = gamma/mean.alpha}
-#'  }
+#' \item \code{rao}: Rao index of dissimilarity; this option has been introduced and used by Boulangeat et al. (2012). Advantage of Rao index is a possibility to incorporate known relationships among species using the among-species distance matrix. The formula used here is based on de Bello et al. (2010) \emph{beta.rao = (gamma - mean.alpha)/(1 - mean.alpha)} and is calculated by function \code{RaoRel} from package \code{cati}.
 #' \item \code{beta.div}: Calculating the beta diversity as the variation in community matrix, using the concept introduced by Legendre & De Caceres (2013) and function \code{beta.div} written by Pierre Legendre. Three additional arguments can be specified if \code{method = "beta.div"}, namely \code{beta.div.method}, \code{beta.div.sqrt.D} and \code{beta.div.samp} (the original arguments in the function \code{beta.div} are \code{method}, \code{sqrt.D} and \code{samp}).
 #' \itemize{
 #'    \item \code{beta.div.method} is choosing one of 21 distance metrics (from \code{c("euclidean", "manhattan", "modmeanchardiff", "profiles", "hellinger", "chord", "chisquare", "divergence", "canberra", "whittaker", "percentagedifference", "ruzicka", "wishart", "kulczynski", "ab.jaccard", "ab.sorensen","ab.ochiai","ab.simpson","jaccard","sorensen","ochiai")}). 
@@ -231,7 +226,7 @@ calculate.theta.0 <- function (temp.matrix, sci.name, sp, remove.out, psample, r
   
   # first method - use subsampling
   
-  if (method %in% c('additive', 'multiplicative', 'multi.sorensen', 'multi.simpson', 'beals')||(method %in% c('pairwise.jaccard', 'pairwise.sorensen', 'pairwise.simpson', 'rao', 'beta.div') & force.subsample))
+  if (method %in% c('additive', 'multiplicative', 'multi.sorensen', 'multi.simpson', 'beals', 'rao')||(method %in% c('pairwise.jaccard', 'pairwise.sorensen', 'pairwise.simpson', 'beta.div') & force.subsample))
   {
     if (!nrow (temp.matrix) < psample)  
     {
@@ -250,7 +245,8 @@ calculate.theta.0 <- function (temp.matrix, sci.name, sp, remove.out, psample, r
     if (method == "pairwise.simpson") Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) mean (betapart::beta.pair (mc.mat[,,i], index = 'sorensen')$beta.sim)))
     if (method == "multi.sorensen") Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) betapart::beta.multi (mc.mat[,,i], index = 'sorensen')$beta.SOR))
     if (method == "multi.simpson") Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) betapart::beta.multi (mc.mat[,,i], index = 'sorensen')$beta.SIM))
-    if (method == "rao") Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) mean (ade4::disc (as.data.frame (t (mc.mat[,,i]))))))
+#    if (method == "rao") Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) mean (ade4::disc (as.data.frame (t (mc.mat[,,i]))))))
+    if (method == "rao") Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) cati::RaoRel (t (mc.mat[,,i]), dfunc = NULL, dphyl = NULL, Jost = TRUE)$TD$Beta_prop))
     if (method == "beta.div") Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) beta.div (mc.mat[,,i], method = beta.div.method, sqrt.D = beta.div.sqrt.D, nperm = 0)$SStotal_BDtotal[2]))
     
     theta <- mean(Wbeta.vec)      #mean beta diversity value for all reps (= theta metric)
@@ -269,7 +265,7 @@ calculate.theta.0 <- function (temp.matrix, sci.name, sp, remove.out, psample, r
     }
   }
   # second method - not to use subsampling (only for subset of methods which are not dependent on sample size)
-  if (method %in% c('pairwise.jaccard', 'pairwise.sorensen', 'pairwise.simpson', 'rao', 'beta.div') & !force.subsample)
+  if (method %in% c('pairwise.jaccard', 'pairwise.sorensen', 'pairwise.simpson', 'beta.div') & !force.subsample)
   {
     if (!nrow (temp.matrix) < psample)  
     {
@@ -279,7 +275,6 @@ calculate.theta.0 <- function (temp.matrix, sci.name, sp, remove.out, psample, r
       if (method == "pairwise.jaccard") theta <- mean (betapart::beta.pair (temp.matrix, index = 'jaccard')$beta.jac)
       if (method == "pairwise.sorensen") theta <- mean (betapart::beta.pair (temp.matrix, index = 'sorensen')$beta.sor)
       if (method == "pairwise.simpson") theta <- mean (betapart::beta.pair (temp.matrix, index = 'sorensen')$beta.sim)
-      if (method == "rao") theta <- mean (ade4::disc (as.data.frame (t (temp.matrix))))
       if (method == "beta.div") theta <- beta.div (temp.matrix, method = beta.div.method, sqrt.D = beta.div.sqrt.D, nperm = 0)$SStotal_BDtotal[2]
       
       meanco <- total.rich			#mean cooccurrences in "psample" plots
