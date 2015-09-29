@@ -245,7 +245,6 @@ calculate.theta.0 <- function (temp.matrix, sci.name, sp, remove.out, psample, r
     if (method == "pairwise.simpson") Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) mean (betapart::beta.pair (mc.mat[,,i], index = 'sorensen')$beta.sim)))
     if (method == "multi.sorensen") Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) betapart::beta.multi (mc.mat[,,i], index = 'sorensen')$beta.SOR))
     if (method == "multi.simpson") Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) betapart::beta.multi (mc.mat[,,i], index = 'sorensen')$beta.SIM))
-#    if (method == "rao") Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) mean (ade4::disc (as.data.frame (t (mc.mat[,,i]))))))
     if (method == "rao") Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) cati::RaoRel (t (mc.mat[,,i]), dfunc = NULL, dphyl = NULL, Jost = TRUE)$TD$Beta_prop))
     if (method == "beta.div") Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) beta.div (mc.mat[,,i], method = beta.div.method, sqrt.D = beta.div.sqrt.D, nperm = 0)$SStotal_BDtotal[2]))
     
