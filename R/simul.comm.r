@@ -167,14 +167,15 @@ sample.comm <- function (simul.comm = NULL, Np = 300, sample.x = "random", no.in
   p.mat[is.na (p.mat)] <- 0
   
   a.mat <- p.mat*0 # prepared abundance matrix
-  draws.rand <- round(rnorm(Np, mean = no.ind, sd = cv.no.ind * no.ind))
-  draws.rand [draws.rand <= 0] <- 1  # if the number of individuals should be zerro or negative, replace by one (to avoid empty samples)
   
   #output data frames
   samp.out.rand <- matrix(0, nrow = Np, ncol = sc$totS)
   
   #Sampling for random-sample-interval based on individuals
   if (based.on == 'individuals')
+  {
+    draws.rand <- round(rnorm(Np, mean = no.ind, sd = cv.no.ind * no.ind))
+    draws.rand [draws.rand <= 0] <- 1  # if the number of individuals should be zerro or negative, replace by one (to avoid empty samples)
     for(i in 1:Np) {
       samp.prob<-p.mat[i,]		#probabilities of sampling each species in given location (based on rel abundance)
       if (sum (samp.prob) > 0) 
@@ -183,6 +184,7 @@ sample.comm <- function (simul.comm = NULL, Np = 300, sample.x = "random", no.in
         a.mat[i,][as.numeric(names(tab.samp))] <- tab.samp
       } else a.mat[i,] <- 0
     } 
+  }
   #Sampling for random-sample-interval based on no of species
   if (based.on == 'species')
     for (i in 1:Np) {
