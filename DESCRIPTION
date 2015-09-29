@@ -1,7 +1,7 @@
 Package: theta
 Type: Package
 Title: Co-occurrence based measure of species habitat specialization
-Version: 0.7-31
+Version: 0.7-32
 Date: 2015-09-29
 Author: David Zeleny, partly based on published scripts by Fridley et al. 2007  and Zeleny 2009
 Maintainer: David Zeleny <zeleny.david@gmail.com>

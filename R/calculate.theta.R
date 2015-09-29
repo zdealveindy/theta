@@ -238,7 +238,8 @@ calculate.theta.0 <- function (temp.matrix, sci.name, sp, remove.out, psample, r
     total.rich <- colSums (apply (mc.mat, c(2,3), sum) > 0)
     mean.alpha <- colMeans (apply (mc.mat > 0, c(1,3), sum))
     
-    if (method == "multiplicative" | method == "beals") if (q == 0) Wbeta.vec <- total.rich/mean.alpha else Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) vegetarian::d (mc.mat[,,i], lev = 'beta', q = q)))  # generalized Whittaker's multiplicative beta - for q = 0 it's classical Whittaker
+    if (method == "multiplicative") if (q == 0) Wbeta.vec <- total.rich/mean.alpha else Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) vegetarian::d (mc.mat[,,i], lev = 'beta', q = q)))  # generalized Whittaker's multiplicative beta - for q = 0 it's classical Whittaker
+    if (method == "beals") Wbeta.vec <- total.rich/mean.alpha
     if (method == "additive") Wbeta.vec <- total.rich-mean.alpha 
     if (method == "pairwise.jaccard") Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) mean (betapart::beta.pair (mc.mat[,,i], index = 'jaccard')$beta.jac)))
     if (method == "pairwise.sorensen") Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) mean (betapart::beta.pair (mc.mat[,,i], index = 'sorensen')$beta.sor)))
