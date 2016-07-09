@@ -3,7 +3,8 @@
 #' @author David Zeleny (zeleny.david@@gmail.com). Partly based on codes written by Jason Fridley (Fridley et al. 2007) and David Zeleny (Zeleny 2009), extended for other published algorithms and optimised for speed and applicability on large datasets. Function \code{beals.2} is based on function \code{beals} from \code{vegan}, written by Miquel De Caceres and Jari Oksanen.
 #' @param input.matrix Community data (\code{matrix} or \code{data.frame}, samples x species). If data are not presence-absence, the matrix will be automatically transformed into presence-absence and warning will be printed.
 #' @param species.data Species data (\code{matrix} or \code{data.frame}). If suplied, it should have at least two columns - the first containing species name, the second containing layer. 
-#' @param psample Minimal frequency of species. Habitat specialization will be calculated for species occurring in number of samples equal or higher than minimal frequency threshold. Default = \code{5}.
+#' @param thresh Minimal frequency of species. Habitat specialization will be calculated for species occurring in number of samples equal or higher than minimal frequency threshold. Default = \code{5}.
+#' @param psample Size of one random subsample (number of plots). This value should not be higher than mimal frequency of species (argument \code{thresh}). Default = \code{5}.
 #' @param reps Number of random subsamples. Specifies how many times the fixed number of samples (specified by \code{psample}) will be randomly drawn from all samples containing target species. Default = \code{10}.
 #' @param method Beta-diversity algorithm used to calculate theta measure. Partial match to \code{'additive'}, \code{'multiplicative'}, \code{'pairwise.jaccard'}, \code{'pairwise.sorensen'}, \code{'pairwise.simpson'}, \code{'multi.sorensen'}, \code{'multi.simpson'}, \code{'rao'}, \code{'beals'} and \code{'beta.div'}). See Details for available options.
 #' @param beta.div.method Argument for the function \code{beta.div}, if the \code{method = 'beta.div'}. See Details.
@@ -99,7 +100,7 @@
 
 #' @rdname calculate.theta
 #' @export
-calculate.theta <- function (input.matrix, species.data = NULL, psample = 5, reps = 10, method = "multiplicative", q = 0, beta.div.method = 'hellinger', beta.div.sqrt.D = FALSE, beta.div.samp = TRUE, beals.file = NULL, pa.transform = FALSE, force.subsample = FALSE, parallel = FALSE, no.cores = 2, remove.out = F, verbal = F, juicer = F, tcltk = F) 
+calculate.theta <- function (input.matrix, species.data = NULL, thresh = 5, psample = 5, reps = 10, method = "multiplicative", q = 0, rarefaction = TRUE, beta.div.method = 'hellinger', beta.div.sqrt.D = FALSE, beta.div.samp = TRUE, beals.file = NULL, pa.transform = FALSE, force.subsample = FALSE, parallel = FALSE, no.cores = 2, remove.out = F, out.metric = 'sorensen', verbal = F, juicer = F, tcltk = F) 
 {
   require (tcltk)
   METHODS <- c('additive', 'multiplicative', 'pairwise.jaccard', 'pairwise.sorensen', 'pairwise.simpson', 'multi.sorensen', 'multi.simpson', 'rao', 'beals', 'beta.div')
@@ -110,9 +111,12 @@ calculate.theta <- function (input.matrix, species.data = NULL, psample = 5, rep
   if (!verbal) win.pb <- NULL
   if (is.na (reps) || reps < 2) 
     if (verbal) {tkmessageBox (type = "ok", message = "Number of random subsamples must be integer >= 2"); stop ()} else stop ("Number of random subsamples must be integer >= 2")
-  if (is.na (psample) || psample < 2) 
-    if (verbal) {tkmessageBox (type = "ok", message = "Minimal frequency of species must be integer >= 2"); stop ()} else stop ("Minimal frequency of species must be integer >= 2")
-
+  if (is.na (thresh) || thresh < 2) 
+    if (verbal) {tkmessageBox (type = "ok", message = "Minimum frequency of species must be integer >= 2"); stop ()} else stop ("Minimum frequency of species must be integer >= 2")
+  if (thresh < psample) 
+    if (verbal) {tkmessageBox (type = "ok", message = "Minimum frequency of species must be >= size of the random subsamples"); stop ()} else stop ("Minimum frequency of species must be >= size of the random subsamples")
+  
+  
   if (!is.matrix (input.matrix)) input.matrix <- as.matrix (input.matrix)  # if input.matrix is dataframe, changes into matrix
   if (is.null (row.names (input.matrix))) row.names (input.matrix) <- seq (1, nrow (input.matrix))  # if input.matrix has no row.names, these are created as sequence of integers
 
@@ -122,7 +126,7 @@ if (pa.transform) input.matrix <- ifelse (input.matrix > 0, 1, 0)
   # For which species to calculate theta metric:
   Nplots <- nrow (input.matrix)
   plots.per.spp <- colSums (input.matrix > 0)  # uses only presence-absence data, since it needs count of plots per species, not sum of abundances
-  select.spp <- plots.per.spp[plots.per.spp >= psample]
+  select.spp <- plots.per.spp[plots.per.spp >= thresh]
   Nspp <- length (select.spp)
   
   
@@ -168,7 +172,7 @@ if (pa.transform) input.matrix <- ifelse (input.matrix > 0, 1, 0)
         temp.matrix <- input.matrix[input.matrix [,colnames (input.matrix) == names (select.spp[sp])]>0,]
       temp.matrix <- temp.matrix[,colSums (temp.matrix) > 0]
       sci.name <- labels (select.spp[sp])
-      calculate.theta.0 (temp.matrix = temp.matrix, sci.name = sci.name, sp = sp, remove.out = remove.out, psample = psample, reps = reps, method = method, q = q, beta.div.method = beta.div.method, beta.div.sqrt.D = beta.div.sqrt.D, beta.div.samp = beta.div.samp, force.subsample = force.subsample, parallel = parallel, win.pb = win.pb, verbal = verbal, juicer = juicer)
+      calculate.theta.0 (temp.matrix = temp.matrix, sci.name = sci.name, sp = sp, remove.out = remove.out, out.metric = out.metric, thresh = thresh, psample = psample, reps = reps, method = method, q = q, rarefaction = rarefaction, beta.div.method = beta.div.method, beta.div.sqrt.D = beta.div.sqrt.D, beta.div.samp = beta.div.samp, force.subsample = force.subsample, parallel = parallel, win.pb = win.pb, verbal = verbal, juicer = juicer)
     })
       
     if (verbal) close (win.pb)
@@ -179,14 +183,14 @@ if (pa.transform) input.matrix <- ifelse (input.matrix > 0, 1, 0)
     require (parallel)
     workers <- makeCluster (no.cores)
     if (verbal) if (file.exists ('GS-progress.txt')) file.remove ('GS-progress.txt')
-    clusterExport (workers, c('calculate.theta.0', 'input.matrix', 'select.spp', 'remove.out', 'psample', 'reps', 'method', 'parallel'), envir = environment ())
+    clusterExport (workers, c('calculate.theta.0', 'input.matrix', 'select.spp', 'remove.out', 'thresh', 'psample', 'reps', 'method', 'parallel'), envir = environment ())
     temp.res <- parLapply (workers, 1:Nspp, fun = function (sp) 
     {
       if (method == 'beals') temp.matrix <- beals.matrix[input.matrix [,colnames (input.matrix) == names (select.spp[sp])]>0,] else 
         temp.matrix <- input.matrix[input.matrix [,colnames (input.matrix) == names (select.spp[sp])]>0,]
       temp.matrix <- temp.matrix[,colSums (temp.matrix) > 0]
       sci.name <- labels (select.spp[sp])
-      calculate.theta.0 (temp.matrix = temp.matrix, sci.name = sci.name, sp = sp, remove.out = remove.out, psample = psample, reps = reps, method = method, q = q, beta.div.method = beta.div.method, beta.div.sqrt.D = beta.div.sqrt.D, beta.div.samp = beta.div.samp, force.subsample = force.subsample, parallel = parallel, win.pb = NULL, verbal = verbal, juicer = juicer) 
+      calculate.theta.0 (temp.matrix = temp.matrix, sci.name = sci.name, sp = sp, remove.out = remove.out, out.metric = out.metric, thresh = thresh, psample = psample, reps = reps, method = method, q = q, rarefaction = rarefaction, beta.div.method = beta.div.method, beta.div.sqrt.D = beta.div.sqrt.D, beta.div.samp = beta.div.samp, force.subsample = force.subsample, parallel = parallel, win.pb = NULL, verbal = verbal, juicer = juicer) 
     }
     )
     stopCluster (workers)
@@ -209,14 +213,16 @@ if (pa.transform) input.matrix <- ifelse (input.matrix > 0, 1, 0)
 #' @name calculate.theta
 #' @export
 #' 
-calculate.theta.0 <- function (temp.matrix, sci.name, sp, remove.out, psample, reps, method, q, beta.div.method, beta.div.sqrt.D, beta.div.samp, force.subsample, parallel, win.pb, verbal, juicer)
+calculate.theta.0 <- function (temp.matrix, sci.name, sp, remove.out, out.metric, thresh, psample, reps, method, rarefaction, q, beta.div.method, beta.div.sqrt.D, beta.div.samp, force.subsample, parallel, win.pb, verbal, juicer)
 {
   if (verbal) if (parallel) write (paste (sp, '\n'), file = 'GS-progress.txt', append = T) else setWinProgressBar (win.pb, sp, label = paste ("Species no. ", sp))
   
   #performs outlier analysis sensu Botta-Dukat (2012):  
   if (remove.out)
   {
-    veg.dist <- as.matrix (dist (temp.matrix))
+    if (out.metric == 'sorensen') veg.dist <- as.matrix (vegan::vegdist (temp.matrix > 0))
+    if (out.metric == 'binary.euclidean') veg.dist <- as.matrix (dist (temp.matrix > 0))
+    if (out.metric == 'euclidean') veg.dist <- as.matrix (dist (temp.matrix))
     diag (veg.dist) <- NA
     distances <- rowMeans (veg.dist, na.rm = T)
     outliers <- distances > (mean (distances) + 2*sd (distances))
@@ -225,10 +231,9 @@ calculate.theta.0 <- function (temp.matrix, sci.name, sp, remove.out, psample, r
   }
   
   # first method - use subsampling
-  
-  if (method %in% c('additive', 'multiplicative', 'multi.sorensen', 'multi.simpson', 'beals', 'rao')||(method %in% c('pairwise.jaccard', 'pairwise.sorensen', 'pairwise.simpson', 'beta.div') & force.subsample))
+  if (method %in% c('additive', 'multiplicative', 'multi.sorensen', 'multi.simpson', 'beals', 'rao') & !(method %in% c('multiplicative', 'beals') & rarefaction) || (method %in% c('pairwise.jaccard', 'pairwise.sorensen', 'pairwise.simpson', 'beta.div') & force.subsample))
   {
-    if (!nrow (temp.matrix) < psample)  
+    if (!nrow (temp.matrix) < thresh)  
     {
     rn.temp.matrix <- matrix (rownames (temp.matrix), ncol = reps, nrow = nrow (temp.matrix), byrow = F)
     sample.temp.matrix <- apply (rn.temp.matrix, 2, FUN = function (x) sample (x, psample))
@@ -267,7 +272,7 @@ calculate.theta.0 <- function (temp.matrix, sci.name, sp, remove.out, psample, r
   # second method - not to use subsampling (only for subset of methods which are not dependent on sample size)
   if (method %in% c('pairwise.jaccard', 'pairwise.sorensen', 'pairwise.simpson', 'beta.div') & !force.subsample)
   {
-    if (!nrow (temp.matrix) < psample)  
+    if (!nrow (temp.matrix) < thresh)  
     {
       total.rich <- sum (colSums (temp.matrix) > 0)
       mean.alpha <- mean (rowSums (temp.matrix > 0))
@@ -283,6 +288,21 @@ calculate.theta.0 <- function (temp.matrix, sci.name, sp, remove.out, psample, r
       occur.freq <- nrow (temp.matrix)							#total number of plots
       
       result <- list(sci.name, local.avgS, occur.freq, meanco, theta)
+      return (result)
+    }
+  }
+  # third method - only for multiplicative with q = 0 and beals - use beta diversity rarefaction to calculate mean true beta
+  if (method %in% c('multiplicative', 'beals') & rarefaction)
+  {
+    if (!nrow (temp.matrix) < thresh)  
+    {
+      theta <- beta.raref (comm = temp.matrix, sites = psample)  # contains also sd
+      total.rich <- sum (colSums (temp.matrix) > 0)
+      meanco <- total.rich			#mean cooccurrences in "psample" plots
+      sci.name <- sci.name	#scientific name
+      local.avgS <- theta$alpha				#approximate mean local richness
+      occur.freq <- nrow (temp.matrix)
+      result <- list(sci.name, local.avgS, occur.freq, meanco, theta = theta$true.beta, theta.sd = theta$tb.sd)
       return (result)
     }
   }
@@ -304,7 +324,8 @@ calculate.theta.tcltk <- function (input.matrix, species.data = NULL, juicer = T
   spec.frm <- tkframe (base, borderwidth=2)
   frame.title <- tkframe (spec.frm, relief = 'groove', borderwidth = 2, background = 'grey')
   frame.a <- tkframe (spec.frm, relief = 'groove', borderwidth = 2)
-  frame.b <- tkframe (spec.frm, relief = 'groove', borderwidth = 2)
+  frame.b1 <- tkframe (spec.frm, relief = 'groove', borderwidth = 2)
+  frame.b2 <- tkframe (spec.frm, relief = 'groove', borderwidth = 2)
   frame.c <- tkframe (spec.frm, relief = 'groove', borderwidth = 2)
   frame.d <- tkframe (spec.frm, borderwidth = 2)
   frame.e <- tkframe (spec.frm, relief = 'groove', borderwidth = 2)
@@ -325,18 +346,22 @@ calculate.theta.tcltk <- function (input.matrix, species.data = NULL, juicer = T
   radio6 <- tkradiobutton (frame.a, text = GSmethods[6], value = 'multi.simpson', variable = GSmethod)
   radio7 <- tkradiobutton (frame.a, text = GSmethods[7], value = 'rao', variable = GSmethod)
   radio8 <- tkradiobutton (frame.a, text = GSmethods[7], value = 'beta.div', variable = GSmethod)
+  tk.thresh <- tclVar (5)
   tk.psample <- tclVar (5)
   tk.reps <- tclVar (10)
   parallel <- tclVar (0)
   no.cores <- tclVar (2)
   remove.out <- tclVar (0)
-  label.entry1 <- tklabel (frame.b, text = "Minimal frequency of species ")
-  entry1 <- tkentry (frame.b, width = 5, textvariable = tk.psample)
+  label.entry1 <- tklabel (frame.b1, text = "Minimal frequency of species ")
+  entry1 <- tkentry (frame.b1, width = 5, textvariable = tk.thresh)
   
-  label.entry2 <- tklabel (frame.c, text = "Number of random subsamples ")
-  entry2 <- tkentry (frame.c, width = 5, textvariable = tk.reps)
+  label.entry2 <- tklabel (frame.b2, text = "Size of random subsamples ")
+  entry2 <- tkentry (frame.b2, width = 5, textvariable = tk.psample)
   
-  button1 <- tkbutton (frame.d, text = "Calculate", width = 10, height = 2, command = function () calculate.theta (input.matrix = input.matrix, species.data = species.data, psample = as.numeric (tclvalue (tk.psample)), reps = as.numeric (tkget (entry2)), method = as.character (tclvalue (GSmethod)), beals.file = beals.file, parallel = as.logical (as.numeric (tclvalue (parallel))), no.cores = as.numeric (tclvalue (no.cores)), remove.out = as.logical (as.numeric (tclvalue (remove.out))), verbal = T, juicer = T, tcltk = T))
+  label.entry3 <- tklabel (frame.c, text = "Number of random subsamples ")
+  entry3 <- tkentry (frame.c, width = 5, textvariable = tk.reps)
+  
+  button1 <- tkbutton (frame.d, text = "Calculate", width = 10, height = 2, command = function () calculate.theta (input.matrix = input.matrix, species.data = species.data, thresh = as.numeric (tkget (entry1)), psample = as.numeric (tkget (entry2)), reps = as.numeric (tkget (entry3)), method = as.character (tclvalue (GSmethod)), beals.file = beals.file, parallel = as.logical (as.numeric (tclvalue (parallel))), no.cores = as.numeric (tclvalue (no.cores)), remove.out = as.logical (as.numeric (tclvalue (remove.out))), verbal = T, juicer = T, tcltk = T))
   
   
   choose.label <- tklabel (frame.e.2, text = 'Select the file with beals smoothed data')
@@ -357,18 +382,19 @@ calculate.theta.tcltk <- function (input.matrix, species.data = NULL, juicer = T
   tkpack (label.radio, radio1, radio2, radio4, radio5, radio6, radio7, radio3, anchor = 'w')
   tkpack (label.entry1, entry1, anchor = 'w', side = 'left')
   tkpack (label.entry2, entry2, anchor = 'w', side = 'left')
+  tkpack (label.entry3, entry3, anchor = 'w', side = 'left')
   tkpack (button1)
   tkpack (parallel.checkbutton, parallel.no.cores.label, parallel.no.cores.entry, side = 'left')
   tkpack (parallel.label,  frame.f.1, anchor = 'w')
   
-  tkpack (tklabel (frame.title, text = paste ('Calculation of generalists and specialists using co-occurrence species data \n Author: David Zeleny (zeleny.david@gmail.com)', if (juicer) '\n JUICE-R application (www.bit.ly/habitat-specialists)', '\n Version of library genspe: ', as.character (packageVersion ('genspe')), '\nNumber of samples: ', dim (input.matrix)[1], ', number of species: ', dim (input.matrix)[2], sep = '')), ipady = 10, ipadx = 10, padx = 10, pady = 10)
+  tkpack (tklabel (frame.title, text = paste ('Calculation of generalists and specialists using co-occurrence species data \n Author: David Zeleny (zeleny.david@gmail.com)', if (juicer) '\n JUICE-R application (www.bit.ly/habitat-specialists)', '\n Version of library theta: ', as.character (packageVersion ('theta')), '\nNumber of samples: ', dim (input.matrix)[1], ', number of species: ', dim (input.matrix)[2], sep = '')), ipady = 10, ipadx = 10, padx = 10, pady = 10)
   
   tkpack (frame.title, side = 'top', expand = T, fill = 'both')
   tkpack (frame.a, side = "top", ipady = 10, ipadx = 10, padx = 10, pady = 10, anchor = "w", expand = T, fill = 'both')
   tkpack (frame.e, ipady = 10, ipadx = 10, padx = 10, pady = 10, anchor = "w", expand = T, fill = 'both')
   tkpack (frame.f, ipady = 10, ipadx = 10, padx = 10, pady = 10, anchor = "w", expand = T, fill = 'both')
   tkpack (frame.g, ipady = 10, ipadx = 10, padx = 10, pady = 10, anchor = "w", expand = T, fill = 'both')
-  tkpack (frame.b, frame.c, side = 'left', ipady = 10, ipadx = 10, padx = 10, pady = 10, expand = T, fill = 'both')
+  tkpack (frame.b1, frame.b2, frame.c, side = 'left', ipady = 10, ipadx = 10, padx = 10, pady = 10, expand = T, fill = 'both')
   tkpack (frame.d, side = "bottom", pady = 10, padx = 10, expand = T, fill = 'both')
   
   tkpack (spec.frm)
@@ -406,6 +432,49 @@ beals.2 <- function (x, include = TRUE, verbal = FALSE) # method of beals from v
   if (verbal) close (win.pb2)
   b
 }
+
+#' @name calculate.theta
+#' @export
+beta.raref <- function (comm, sites, conditioned = TRUE, gamma = 'jack1')
+{
+  i <- sites
+  x <- comm
+  x <- as.matrix(x)
+  x <- x[, colSums(x) > 0, drop = FALSE]
+  n <- nrow(x)
+  p <- ncol(x)
+  if (p == 1) {
+    x <- t(x)
+    n <- nrow(x)
+    p <- ncol(x)
+  }
+  freq <- colSums(x > 0)
+  freq <- freq[freq > 0]
+  f <- length(freq)
+  ldiv <- lchoose(n, 1:n)
+  result <- ifelse(n - freq < i, 0, exp(lchoose(n - freq, i) - ldiv[i]))
+  sites <- i
+  specaccum <- sum (1 - result)
+  if (conditioned) {
+    V <- result * (1 - result)
+    tmp1 <- cor(x > 0)
+    ind <- lower.tri(tmp1)
+    tmp1 <- tmp1[ind]
+    tmp1[is.na(tmp1)] <- 0
+    tmp2 <- outer(sqrt(V), sqrt(V))[ind]
+    cv <- 2 * sum(tmp1 * tmp2)
+    V <- sum(V)
+    sdaccum <- sqrt(V + cv)
+  } else {
+    Stot <- specpool(x)[, gamma]
+    sdaccum1 <- sum((1 - result)^2)
+    sdaccum2 <- specaccum^2/Stot
+    sdaccum <- sqrt(sdaccum1 - sdaccum2)
+  }
+  out <- list(sites = sites, richness = specaccum, sd = sdaccum)
+  out
+}
+
 
 beta.div <- function(Y, method="hellinger", sqrt.D=FALSE, samp=TRUE, nperm=999, save.D=FALSE, clock=FALSE)
   #

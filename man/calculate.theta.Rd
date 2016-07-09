@@ -2,31 +2,38 @@
 % Please edit documentation in R/calculate.theta.R
 \name{calculate.theta}
 \alias{beals.2}
+\alias{beta.raref}
 \alias{calculate.theta}
 \alias{calculate.theta.0}
 \alias{calculate.theta.tcltk}
 \title{Co-occurrence based metric of species habitat specialization}
 \usage{
-calculate.theta(input.matrix, species.data = NULL, psample = 5, reps = 10,
-  method = "multiplicative", q = 0, beta.div.method = "hellinger",
+calculate.theta(input.matrix, species.data = NULL, thresh = 5,
+  psample = 5, reps = 10, method = "multiplicative", q = 0,
+  rarefaction = TRUE, beta.div.method = "hellinger",
   beta.div.sqrt.D = FALSE, beta.div.samp = TRUE, beals.file = NULL,
   pa.transform = FALSE, force.subsample = FALSE, parallel = FALSE,
-  no.cores = 2, remove.out = F, verbal = F, juicer = F, tcltk = F)
+  no.cores = 2, remove.out = F, out.metric = "sorensen", verbal = F,
+  juicer = F, tcltk = F)
 
-calculate.theta.0(temp.matrix, sci.name, sp, remove.out, psample, reps, method,
-  q, beta.div.method, beta.div.sqrt.D, beta.div.samp, force.subsample, parallel,
-  win.pb, verbal, juicer)
+calculate.theta.0(temp.matrix, sci.name, sp, remove.out, out.metric, thresh,
+  psample, reps, method, rarefaction, q, beta.div.method, beta.div.sqrt.D,
+  beta.div.samp, force.subsample, parallel, win.pb, verbal, juicer)
 
 calculate.theta.tcltk(input.matrix, species.data = NULL, juicer = T)
 
 beals.2(x, include = TRUE, verbal = FALSE)
+
+beta.raref(comm, sites, conditioned = TRUE, gamma = "jack1")
 }
 \arguments{
 \item{input.matrix}{Community data (\code{matrix} or \code{data.frame}, samples x species). If data are not presence-absence, the matrix will be automatically transformed into presence-absence and warning will be printed.}
 
 \item{species.data}{Species data (\code{matrix} or \code{data.frame}). If suplied, it should have at least two columns - the first containing species name, the second containing layer.}
 
-\item{psample}{Minimal frequency of species. Habitat specialization will be calculated for species occurring in number of samples equal or higher than minimal frequency threshold. Default = \code{5}.}
+\item{thresh}{Minimal frequency of species. Habitat specialization will be calculated for species occurring in number of samples equal or higher than minimal frequency threshold. Default = \code{5}.}
+
+\item{psample}{Size of one random subsample (number of plots). This value should not be higher than mimal frequency of species (argument \code{thresh}). Default = \code{5}.}
 
 \item{reps}{Number of random subsamples. Specifies how many times the fixed number of samples (specified by \code{psample}) will be randomly drawn from all samples containing target species. Default = \code{10}.}
 

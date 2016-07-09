@@ -70,7 +70,7 @@ The function \code{sample.comm} returns \code{list} of 5 items with parameters o
 \itemize{
 \item \code{a.mat} Matrix (sample x species) of species abundances in samples.
 \item \code{p.mat} Matrix (sample x species) of species occurrence probabilities in samples.
-\item \code{sample.x} Vector with positions of samples along the first and second simulated gradient, respectively (environmental variable).
+\item \code{sample.x} Vector with positions of samples along the simulated gradient (environmental variable).
 \item \code{sample.comm} List of 7 items storing initial settings of arguments in \code{sample.comm} (namely arguments \code{Np, based.on, no.ind, k, seed, pa} and \code{standardize.rowsums}).
 \item \code{simul.comm} List of 10 items returned by function \code{simul.comm}.
 }
