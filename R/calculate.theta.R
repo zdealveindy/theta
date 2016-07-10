@@ -4,11 +4,12 @@
 #' @param input.matrix Community data (\code{matrix} or \code{data.frame}, samples x species). If data are not presence-absence, the matrix will be automatically transformed into presence-absence and warning will be printed.
 #' @param species.data Species data (\code{matrix} or \code{data.frame}). If suplied, it should have at least two columns - the first containing species name, the second containing layer. 
 #' @param thresh Minimal frequency of species. Habitat specialization will be calculated for species occurring in number of samples equal or higher than minimal frequency threshold. Default = \code{5}.
-#' @param psample Size of one random subsample (number of plots). This value should not be higher than mimal frequency of species (argument \code{thresh}). Default = \code{5}.
+#' @param psample Size of one random subsample (number of samples) for methods based on subsampling (argument \code{method = c('additive', 'multiplicative', 'multi.sorensen', 'multi.simpson', 'beals', 'rao')}). This value should not be higher than mimal frequency of species (argument \code{thresh}). For default setting (\code{method = 'multiplicative', rarefaction = TRUE} this value number of samples on rarefaction curve on which all the beta diversity calculation is standardized (euqivalent to number of subsamples). Default = \code{5}.
 #' @param reps Number of random subsamples. Specifies how many times the fixed number of samples (specified by \code{psample}) will be randomly drawn from all samples containing target species. Default = \code{10}.
 #' @param method Beta-diversity algorithm used to calculate theta measure. Partial match to \code{'additive'}, \code{'multiplicative'}, \code{'pairwise.jaccard'}, \code{'pairwise.sorensen'}, \code{'pairwise.simpson'}, \code{'multi.sorensen'}, \code{'multi.simpson'}, \code{'rao'}, \code{'beals'} and \code{'beta.div'}). See Details for available options.
 #' @param beta.div.method Argument for the function \code{beta.div}, if the \code{method = 'beta.div'}. See Details.
 #' @param q Generalization of Whittaker's multiplicative beta diversity for abundance data (only if \code{method = 'multiplicative'}). 
+#' @param rarefaction Logical value, which applies for \code{method = 'multiplicative'} and \code{q = 0}: should the Whittaker's multiplicative beta be calculated by rarefaction (\code{rarefaction = TRUE}) or by subsampling (\code{rarefaction = FALSE})? Default = \code{TRUE}.
 #' @param beta.div.sqrt.D Argument for the function \code{beta.div}, if the \code{method = 'beta.div'}. See Details.
 #' @param beta.div.samp Argument for the function \code{beta.div}, if the \code{method = 'beta.div'}. See Details.
 #' @param beals.file Contains pre-calculated matrix of species co-occurrences. Can be used if \code{method = 'beals'} to speed up repeated calculation.
@@ -17,6 +18,7 @@
 #' @param parallel Logical; should be the parallel calculation used?
 #' @param no.cores Number of cores (if \code{parallel = TRUE}). Note that in case of large datasets the calculation may be limited by RAM of the computer, and increasing number of cores may result in saturation of RAM and calculation collapse.
 #' @param remove.out Logical; should be the algorithm removing outliers (sensu Botta-Dukat 2012) applied? 
+#' @param out.metric Dissimilarity metric used to calculate outliers which should be removed (\code{out.metric = c('sorensen', 'euclidean', 'binary.euclidean')}). Default value is \code{'sorensen'}, which is compatible with Whittaker's multiplicative beta; if using other \code{method}, consider to change it into \code{'binary.euclidean'} recommended by Botta-Dukat (2012).
 #' @param verbal Logical; if \code{TRUE}, tcltk progress bar will popup during the calculation.
 #' @param juicer Logical argument specific for launching the function from JUICE software; logical (default = F) - is the function launched from JUICE? If \code{juicer = TRUE}, function is expecting that \code{species.data} have JUICE-specific structure, which enables to import data back to JUICE.
 #' @param tcltk Logical argument specific for launching the function from JUICE sofware.
@@ -26,24 +28,22 @@
 #' @param win.pb Internal argument.
 #' @param x Internal argument of \code{beals.2} function; input compositional matrix.
 #' @param include Internal argument of \code{beals.2} function; include argument from \code{vegan::beals}.
-
 #' @details
-#' Function \code{calculate.theta} calculates theta metric of species habitat specialization using range of proposed beta diversity measures; it uses internal functions \code{calculate.theta.0}, \code{beals.2} (modified from the library \code{vegan} to calculate the sample species pool using Beals smoothing method), \code{beta.div} (written by P. Legendre) for calculating variation in community matrix (sensu Legendre & DeCaceres 2013). Function \code{calculate.theta.tcltk} launches tcltk clickable interface, which enables to select methods and parameters used for calculation; this function is primarily used to be lounched externally, e.g. from JUICE program.
+#' Function \code{calculate.theta} calculates theta metric of species habitat specialization using range of proposed beta diversity measures; it uses internal functions \code{calculate.theta.0}, \code{beals.2} (modified from the library \code{vegan} to calculate the sample species pool using Beals smoothing method), \code{beta.div} (written by P. Legendre and included in the library \code{adespatial}) for calculating variation in community matrix (sensu Legendre & DeCaceres 2013). Function \code{calculate.theta.tcltk} launches tcltk clickable interface, which enables to select methods and parameters used for calculation; this function is primarily used to be launched externally, e.g. from JUICE program.
 #' 
 #' The function \code{calculate.theta} offers the following \code{method} argument to calculate beta diversity among samples:
 #' \itemize{
 #' \item \code{additive}: This is the original algorithm published by Fridley et al. (2007), in which beta diversity among samples containing given species is calculated by additive beta diversity measure.
-#' \item \code{multiplicative}: Uses the multiplicative Whittaker's measure of beta diversity instead of the original additive measure, as suggested by Zeleny (2009). Modification of argument \code{q} calculates multiplicative beta diversity based on number equivalents (or number of effective species), allowing to give different weights to rare and abundant species (or species with low or high cover)(Jost 2007). \code{q = 0} calculates Whittaker's beta, which weights all species equally (meaning that rare species, which are the most susceptible to undersampling, are weighted equally to abundant species); \code{q = 1} calculates number equivalents for Shannon diversity and \code{q = 2} for Simspon diversity. Values of \code{q} different than zerro have sense only if sample data are NOT in presence-absence form and \code{pa.transform = FALSE}. Uses function \code{d} from the packages \code{vegetarian}.
+#' \item \code{multiplicative}: This is the default method, which uses the multiplicative Whittaker's measure of beta diversity instead of the original additive measure, as suggested by Zeleny (2009). Two options are available - using rarefaction of true beta diversity (if \code{rarefaction = TRUE') to given number of samples (argument \code{psample}), or by repeated subsampling of \code{psample} from the dataset \code{reps}-times (if \code{rarefaction = FALSE}); both methods give comparable results, an the rarefaction one is usually more efficient. Modification of argument \code{q} calculates multiplicative beta diversity based on number equivalents (or number of effective species, Jost 2007). \code{q = 0} calculates Whittaker's beta, which weights all species equally (meaning that rare species, which are the most susceptible to undersampling, are weighted equally to abundant species); \code{q = 1} calculates number equivalents for Shannon diversity and \code{q = 2} for Simspon diversity. Uses function \code{d} from the packages \code{vegetarian}.
 #' \item \code{beals}: Multiplicative beta on species pool. Algorithm suggested by Botta-Dukat (2012), calculating the beta diversity using species pool matrix instead of the original species data matrix. Species pool matrix is calculated using Beals smoothing method (invented by Ewald 2002). While the previous multiplicative beta diversity method gives unbiased results only in case of not-saturated communities, this method should give unbiased results also in case of saturated communities. See Zeleny (2009) and Botta-Dukat (2012) for detail discussion of this saturated/not-saturated communities issue. Argument \code{q} have no effect, since the recalculated species pool data are presence-absence only.
 #' \item \code{pairwise.jaccard}, \code{pairwise.sorensen}, \code{pairwise.simpson}, \code{multi.sorensen} and \code{multi.simpson}: Mean pairwise Jaccard, Sorensen and Simpson dissimilarity, and multiple Sorensen and Simpson dissimilarity based on reccomendations of Manthey & Fridley (2009). Authors suggested that neither the original additive algorithm (introduced by Fridley et al. 2007), neither the modified version using the multiplicative beta diversity (Zeleny 2009) is the best solution, and introduced other alternatives, using pairwise or multiple site beta diversity algorithm. Mean pairwise Jaccard dissimilarity (or Sorensen and Simpson, respectively) is based on calculating mean of Jaccard (or Sorensen and Simpson, respectively) dissimilarities among all pairs of samples in each subset, while multiple Sorensen (or Simpson, respectively) is using multiple-site Sorensen (or Simpson, respectively) algorithm introduced by Baselga et al. (2007). Multiple-site Sorensen index is a linear function of Whittaker's beta diversity.
 #' \item \code{rao}: Rao index of dissimilarity; this option has been introduced and used by Boulangeat et al. (2012). Advantage of Rao index is a possibility to incorporate known relationships among species using the among-species distance matrix. The formula used here is based on de Bello et al. (2010) \emph{beta.rao = (gamma - mean.alpha)/(1 - mean.alpha)} and is calculated by function \code{RaoRel} from package \code{cati}.
-#' \item \code{beta.div}: Calculating the beta diversity as the variation in community matrix, using the concept introduced by Legendre & De Caceres (2013) and function \code{beta.div} written by Pierre Legendre. Three additional arguments can be specified if \code{method = "beta.div"}, namely \code{beta.div.method}, \code{beta.div.sqrt.D} and \code{beta.div.samp} (the original arguments in the function \code{beta.div} are \code{method}, \code{sqrt.D} and \code{samp}).
+#' \item \code{beta.div}: Calculating the beta diversity as the variation in community matrix, using the concept introduced by Legendre & De Caceres (2013) and function \code{beta.div} written by Pierre Legendre and implemented in library \code{adespatial}. Three additional arguments can be specified if \code{method = "beta.div"}, namely \code{beta.div.method}, \code{beta.div.sqrt.D} and \code{beta.div.samp} (the original arguments in the function \code{beta.div} are \code{method}, \code{sqrt.D} and \code{samp}).
 #' \itemize{
-#'    \item \code{beta.div.method} is choosing one of 21 distance metrics (from \code{c("euclidean", "manhattan", "modmeanchardiff", "profiles", "hellinger", "chord", "chisquare", "divergence", "canberra", "whittaker", "percentagedifference", "ruzicka", "wishart", "kulczynski", "ab.jaccard", "ab.sorensen","ab.ochiai","ab.simpson","jaccard","sorensen","ochiai")}). 
-#'    \item \code{beta.div.sqrt.D} (logical) decides whether square root of distance should be used for calculation (important for non-euclidean distances like Bray-Curtis, called \code{"percentagedifference"} in \code{beta.div} function). 
+#'    \item \code{beta.div.method} is choosing one of 21 distance metrics (from \code{c("euclidean", "manhattan", "modmeanchardiff", "profiles", "hellinger", "chord", "chisquare", "divergence", "canberra", "whittaker", "\%difference", "ruzicka", "wishart", "kulczynski", "ab.jaccard", "ab.sorensen","ab.ochiai","ab.simpson","jaccard","sorensen","ochiai")}). 
+#'    \item \code{beta.div.sqrt.D} (logical) decides whether square root of distance should be used for calculation (important for non-euclidean distances like Bray-Curtis, called \code{"\%difference"} in \code{beta.div} function). 
 #'    \item \code{beta.div.samp} is logical; if \code{beta.div.samp = TRUE}, the abundance-based distances (\code{c("ab.jaccard", "ab.sorensen", "ab.ochiai", "ab.simpson")}) are computed for sample data. If \code{beta.div.samp = FALSE}, they are computed for true population data.
 #' }}
-#' Definition of \code{beta.div} function was published in Appendix S4.r in Legendre & De Caceres (2013); the version used here is the later one from Legendre's website (http://adn.biol.umontreal.ca/~numericalecology/labo/fonctions_r/beta-diversity.zip); however, I keep using \code{method = "percentagedifference"} instead of "\%difference" from the new version, since I had a problem with roxygenizing the R help files with \% sign.
 #' @return
 #' The function \code{calculate.theta} returns data.frame, with species in rows and the following columns:
 #' \itemize{
@@ -84,8 +84,10 @@
 #' additive <- calculate.theta (sc$a.mat, method = 'add')
 #' multi <- calculate.theta (sc$a.mat, method = 'multiplicative')
 #' beals <- calculate.theta (sc$a.mat, method = 'beals')
-#' bray <- calculate.theta (sc$a.mat, method = 'beta.div', beta.div.method = 'percentagedifference', beta.div.sqrt.D = TRUE)
-#' # Visualize the relationship using function pairs with Spearmann's correlation in the boxes above diagonal (see Examples in ?pairs)
+#' bray <- calculate.theta (sc$a.mat, method = 'beta.div', 
+#'  beta.div.method = '%difference', beta.div.sqrt.D = TRUE)
+#' # Visualize the relationship using function pairs with Spearmann's correlation 
+#' # in the boxes above diagonal (see Examples in ?pairs)
 #' panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
 #' {
 #'   usr <- par("usr"); on.exit(par(usr))
@@ -96,13 +98,20 @@
 #'   if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
 #'   text(0.5, 0.5, txt, cex = cex.cor * r)
 #' }
-#'pairs (cbind (niches = niches[names (niches) %in% additive$sci.name], additive = additive$theta, multi = multi$theta, beals = beals$theta, bray = bray$theta), upper.panel = panel.cor)
-
+#'pairs (cbind (niches = niches[names (niches) %in% additive$sci.name], 
+#'  additive = additive$theta, multi = multi$theta, beals = beals$theta, bray = bray$theta), 
+#'  upper.panel = panel.cor)
+#' @importFrom vegetarian d
+#' @importFrom adespatial beta.div
+#' @import parallel
+#' @import tcltk
+#' @import stats
+#' @import graphics
+#' @import utils
 #' @rdname calculate.theta
 #' @export
 calculate.theta <- function (input.matrix, species.data = NULL, thresh = 5, psample = 5, reps = 10, method = "multiplicative", q = 0, rarefaction = TRUE, beta.div.method = 'hellinger', beta.div.sqrt.D = FALSE, beta.div.samp = TRUE, beals.file = NULL, pa.transform = FALSE, force.subsample = FALSE, parallel = FALSE, no.cores = 2, remove.out = F, out.metric = 'sorensen', verbal = F, juicer = F, tcltk = F) 
 {
-  require (tcltk)
   METHODS <- c('additive', 'multiplicative', 'pairwise.jaccard', 'pairwise.sorensen', 'pairwise.simpson', 'multi.sorensen', 'multi.simpson', 'rao', 'beals', 'beta.div')
   method.n <- pmatch(method, METHODS)
   if (is.na (method.n)) stop ('invalid method')
@@ -180,7 +189,6 @@ if (pa.transform) input.matrix <- ifelse (input.matrix > 0, 1, 0)
   
   if (parallel)
   {
-    require (parallel)
     workers <- makeCluster (no.cores)
     if (verbal) if (file.exists ('GS-progress.txt')) file.remove ('GS-progress.txt')
     clusterExport (workers, c('calculate.theta.0', 'input.matrix', 'select.spp', 'remove.out', 'thresh', 'psample', 'reps', 'method', 'parallel'), envir = environment ())
@@ -252,7 +260,7 @@ calculate.theta.0 <- function (temp.matrix, sci.name, sp, remove.out, out.metric
     if (method == "multi.sorensen") Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) betapart::beta.multi (mc.mat[,,i], index = 'sorensen')$beta.SOR))
     if (method == "multi.simpson") Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) betapart::beta.multi (mc.mat[,,i], index = 'sorensen')$beta.SIM))
     if (method == "rao") Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) cati::RaoRel (t (mc.mat[,,i]), dfunc = NULL, dphyl = NULL, Jost = TRUE)$TD$Beta_prop))
-    if (method == "beta.div") Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) beta.div (mc.mat[,,i], method = beta.div.method, sqrt.D = beta.div.sqrt.D, nperm = 0)$SStotal_BDtotal[2]))
+    if (method == "beta.div") Wbeta.vec <- unlist (lapply (1:reps, FUN = function (i) adespatial::beta.div (mc.mat[,,i], method = beta.div.method, sqrt.D = beta.div.sqrt.D, nperm = 0)$SStotal_BDtotal[2]))
     
     theta <- mean(Wbeta.vec)      #mean beta diversity value for all reps (= theta metric)
     theta.sd <- sd(Wbeta.vec)			#s.d. of above
@@ -280,7 +288,7 @@ calculate.theta.0 <- function (temp.matrix, sci.name, sp, remove.out, out.metric
       if (method == "pairwise.jaccard") theta <- mean (betapart::beta.pair (temp.matrix, index = 'jaccard')$beta.jac)
       if (method == "pairwise.sorensen") theta <- mean (betapart::beta.pair (temp.matrix, index = 'sorensen')$beta.sor)
       if (method == "pairwise.simpson") theta <- mean (betapart::beta.pair (temp.matrix, index = 'sorensen')$beta.sim)
-      if (method == "beta.div") theta <- beta.div (temp.matrix, method = beta.div.method, sqrt.D = beta.div.sqrt.D, nperm = 0)$SStotal_BDtotal[2]
+      if (method == "beta.div") theta <- adespatial::beta.div (temp.matrix, method = beta.div.method, sqrt.D = beta.div.sqrt.D, nperm = 0)$SStotal_BDtotal[2]
       
       meanco <- total.rich			#mean cooccurrences in "psample" plots
       sci.name <- sci.name	#scientific name
@@ -301,7 +309,7 @@ calculate.theta.0 <- function (temp.matrix, sci.name, sp, remove.out, out.metric
       meanco <- total.rich			#number of co-occurring species in the subset
       local.avgS <- theta$alpha				#approximate mean local richness
       occur.freq <- nrow (temp.matrix)
-      result <- list(sci.name, local.avgS, occur.freq, meanco, theta$true.beta, theta$tb.sd)
+      result <- list(sci.name, local.avgS, occur.freq, meanco, theta$beta, theta$beta.sd)
       return (result)
     }
   }
@@ -311,7 +319,6 @@ calculate.theta.0 <- function (temp.matrix, sci.name, sp, remove.out, out.metric
 #' @export
 calculate.theta.tcltk <- function (input.matrix, species.data = NULL, juicer = T)
 {
-  require (tcltk)
   cancel <- tclVar (0)
   end.end <- F
   beals.file <- NULL
@@ -431,459 +438,3 @@ beals.2 <- function (x, include = TRUE, verbal = FALSE) # method of beals from v
   if (verbal) close (win.pb2)
   b
 }
-
-#' @name calculate.theta
-#' @export
-beta.raref <- function (comm, sites, conditioned = TRUE, gamma = 'jack1')
-{
-  i <- sites
-  x <- comm
-  x <- as.matrix(x)
-  x <- x[, colSums(x) > 0, drop = FALSE]
-  n <- nrow(x)
-  p <- ncol(x)
-  alpha <- mean (rowSums (x > 0))
-  if (p == 1) {
-    x <- t(x)
-    n <- nrow(x)
-    p <- ncol(x)
-  }
-  freq <- colSums(x > 0)
-  freq <- freq[freq > 0]
-  f <- length(freq)
-  ldiv <- lchoose(n, 1:n)
-  result <- ifelse(n - freq < i, 0, exp(lchoose(n - freq, i) - ldiv[i]))
-  sites <- i
-  specaccum <- sum (1 - result)
-  if (conditioned) {
-    V <- result * (1 - result)
-    tmp1 <- cor(x > 0)
-    ind <- lower.tri(tmp1)
-    tmp1 <- tmp1[ind]
-    tmp1[is.na(tmp1)] <- 0
-    tmp2 <- outer(sqrt(V), sqrt(V))[ind]
-    cv <- 2 * sum(tmp1 * tmp2)
-    V <- sum(V)
-    sdaccum <- sqrt(V + cv)
-  } else {
-    Stot <- specpool(x)[, gamma]
-    sdaccum1 <- sum((1 - result)^2)
-    sdaccum2 <- specaccum^2/Stot
-    sdaccum <- sqrt(sdaccum1 - sdaccum2)
-  }
-  out <- list(sites = sites, richness = specaccum, sd = sdaccum, alpha = alpha, true.beta = specaccum/alpha, tb.sd = sdaccum/alpha)
-  out
-}
-
-
-
-beta.div <- function(Y, method="hellinger", sqrt.D=FALSE, samp=TRUE, nperm=999, save.D=FALSE, clock=FALSE)
-  #
-  # Compute estimates of total beta diversity as the total variance in Y, 
-  # for 21 dissimilarity coefficients or analysis of raw data (not recommended). 
-  # LCBD indices are tested by permutation within columns of Y.
-  # This version includes direct calculation of the Jaccard, Sorensen and Ochiai 
-  # coefficients for presence-absence data, done by package ade4.
-  #
-  # Arguments --
-  # 
-  # Y : community composition data matrix.
-  # method : name of one of the 20 dissimilarity coefficients, or "none" for
-#          direct calculation on Y (also the case with method="euclidean").
-# sqrt.D : If sqrt.D=TRUE, the distances in matrix D are square-rooted before 
-#          computation of SStotal, BDtotal and LCBD. 
-# samp : If samp=TRUE, the abundance-based distances (ab.jaccard, ab.sorensen,
-#        ab.ochiai, ab.simpson) are computed for sample data. If samp=FALSE, 
-#        they are computed for true population data.
-# nperm : Number of permutations for test of LCBD.
-# save.D : If save.D=TRUE, the distance matrix will appear in the output list.
-# clock : If clock=TRUE, the computation time is printed in the R console.
-#
-# Reference --
-#
-# Legendre, P. and M. De Cáceres. 2013. Beta diversity as the variance of 
-# community data: dissimilarity coefficients and partitioning. 
-# Ecology Letters 16: 951-963. 
-#
-# License: GPL-2 
-# Author:: Pierre Legendre, December 2012, April-May 2013, April 2015
-{
-  ### Internal functions
-  centre <- function(D,n)
-    # Centre a square matrix D by matrix algebra
-    # mat.cen = (I - 11'/n) D (I - 11'/n)
-  {	One <- matrix(1,n,n)
-  mat <- diag(n) - One/n
-  mat.cen <- mat %*% D %*% mat
-  }
-  ###
-  BD.group1 <- function(Y, method, save.D, per, n)
-  {
-    if(method=="profiles") Y = decostand(Y, "total")
-    if(method=="hellinger") Y = decostand(Y, "hellinger")
-    if(method=="chord") Y = decostand(Y, "norm")
-    if(method=="chisquare") Y = decostand(Y, "chi.square")
-    #
-    s <- scale(Y, center=TRUE, scale=FALSE)^2   # eq. 1
-    SStotal <- sum(s)          # eq. 2
-    BDtotal <- SStotal/(n-1)   # eq. 3
-    if(!per) { SCBD<-apply(s,2,sum)/SStotal }else{ SCBD<-NA }  # eqs. 4a and 4b
-    LCBD <- apply(s, 1, sum)/SStotal  # eqs. 5a and 5b
-    #
-    D <- NA
-    if(!per & save.D)   D <- dist(Y)
-    #
-    out <- list(SStotal_BDtotal=c(SStotal,BDtotal), SCBD=SCBD, LCBD=LCBD, 
-                method=method, D=D)
-  }
-  ###
-  BD.group2 <- function(Y, method, sqrt.D, n)
-  {
-    if(method == "divergence") {
-      D = D11(Y)		
-      
-    } else if(any(method == 
-                  c("jaccard","sorensen","ochiai"))) 
-    {
-      if(method=="jaccard") D = dist.binary(Y, method=1) # ade4 takes sqrt(D)
-      if(method=="sorensen")  D = dist.binary(Y, method=5) #ade4 takes sqrt(D)
-      if(method=="ochiai") D = dist.binary(Y, method=7) # ade4 takes sqrt(D)
-      
-    } else if(any(method == 
-                  c("manhattan","canberra","whittaker","percentagedifference","ruzicka","wishart"))) 
-    {
-      if(method=="manhattan") D = vegdist(Y, "manhattan")
-      if(method=="canberra")  D = vegdist(Y, "canberra")
-      if(method=="whittaker") D = vegdist(decostand(Y,"total"), "manhattan")/2
-      if(method=="percentagedifference") D = vegdist(Y, "bray")
-      if(method=="ruzicka")   D = RuzickaD(Y)
-      if(method=="wishart")   D = WishartD(Y)
-    } else {
-      if(method=="modmeanchardiff") D = D19(Y)
-      if(method=="kulczynski")  D = vegdist(Y, "kulczynski")
-      if(method=="ab.jaccard")  D = chao(Y, coeff="Jaccard", samp=samp)
-      if(method=="ab.sorensen") D = chao(Y, coeff="Sorensen", samp=samp)
-      if(method=="ab.ochiai")   D = chao(Y, coeff="Ochiai", samp=samp)
-      if(method=="ab.simpson")  D = chao(Y, coeff="Simpson", samp=samp)
-    }
-    #
-    if(sqrt.D) D = sqrt(D)
-    SStotal <- sum(D^2)/n      # eq. 8
-    BDtotal <- SStotal/(n-1)   # eq. 3
-    delta1 <- centre(as.matrix(-0.5*D^2), n)   # eq. 9
-    LCBD <- diag(delta1)/SStotal               # eq. 10b
-    #
-    out <- list(SStotal_BDtotal=c(SStotal,BDtotal), LCBD=LCBD, 
-                method=method, D=D)
-  }
-  ###
-  ###
-  epsilon <- sqrt(.Machine$double.eps)
-  method <- match.arg(method, c("euclidean", "manhattan", "modmeanchardiff", "profiles", "hellinger", "chord", "chisquare", "divergence", "canberra", "whittaker", "percentagedifference", "ruzicka", "wishart", "kulczynski", "ab.jaccard", "ab.sorensen","ab.ochiai","ab.simpson","jaccard","sorensen","ochiai","none"))
-  #
-  if(any(method == c("profiles", "hellinger", "chord", "chisquare", "manhattan", "modmeanchardiff", "divergence", "canberra", "whittaker", "percentagedifference", "kulczynski"))) require(vegan)
-  if(any(method == c("jaccard","sorensen","ochiai"))) require(ade4)
-  #
-  if(is.table(Y)) Y <- Y[1:nrow(Y),1:ncol(Y)]    # In case class(Y) is "table"
-  n <- nrow(Y)
-  if((n==2)&(dist(Y)[1]<epsilon)) stop("Y contains two identical rows, hence BDtotal = 0")
-  #
-  aa <- system.time({
-    if(any(method == 
-           c("euclidean", "profiles", "hellinger", "chord", "chisquare","none"))) {
-      note <- "Info -- This coefficient is Euclidean"
-      res <- BD.group1(Y, method, save.D, per=FALSE, n)
-      #
-      # Permutation test for LCBD indices, distances group 1
-      if(nperm>0) {
-        p <- ncol(Y)
-        nGE.L = rep(1,n)
-        for(iperm in 1:nperm) {
-          Y.perm = apply(Y,2,sample)
-          res.p <- BD.group1(Y.perm, method, save.D, per=TRUE, n)
-          ge <- which(res.p$LCBD+epsilon >= res$LCBD)
-          nGE.L[ge] <- nGE.L[ge] + 1
-        }
-        p.LCBD <- nGE.L/(nperm+1)
-      } else { p.LCBD <- NA }
-      #
-      if(save.D) { D <- res$D } else { D <- NA }
-      #
-      out <- list(SStotal_BDtotal=res$SStotal_BDtotal, SCBD=res$SCBD, 
-                  LCBD=res$LCBD, p.LCBD=p.LCBD, method=method, note=note, D=D)
-      
-    } else {
-      #
-      if(method == "divergence") {
-        note = "Info -- This coefficient is Euclidean"
-      } else if(any(method == c("jaccard","sorensen","ochiai"))) {
-        note = c("Info -- This coefficient is Euclidean because dist.binary ",
-                 "of ade4 computes it as sqrt(D). Use beta.div with option sqrt.D=FALSE")
-      } else if(any(method == 
-                    c("manhattan","canberra","whittaker","percentagedifference","ruzicka","wishart"))) {
-        if(sqrt.D) {
-          note = "Info -- In the form sqrt(D), this coefficient, is Euclidean"
-        } else {
-          note = c("Info -- For this coefficient, sqrt(D) would be Euclidean", 
-                   "Use is.euclid(D) of ade4 to check Euclideanarity of this D matrix")
-        }
-      } else {
-        note = c("Info -- This coefficient is not Euclidean", 
-                 "Use is.euclid(D) of ade4 to check Euclideanarity of this D matrix")
-      }
-      #
-      res <- BD.group2(Y, method, sqrt.D, n)
-      #
-      # Permutation test for LCBD indices, distances group 2
-      if(nperm>0) {
-        nGE.L = rep(1,n)
-        for(iperm in 1:nperm) {
-          Y.perm = apply(Y,2,sample)
-          res.p <- BD.group2(Y.perm, method, sqrt.D, n)
-          ge <- which(res.p$LCBD+epsilon >= res$LCBD)
-          nGE.L[ge] <- nGE.L[ge] + 1
-        }
-        p.LCBD <- nGE.L/(nperm+1)
-      } else { p.LCBD <- NA }
-      #
-      if(sqrt.D) note.sqrt.D<-"sqrt.D=TRUE"  else  note.sqrt.D<-"sqrt.D=FALSE"
-      if(save.D) { D <- res$D } else { D <- NA }
-      #
-      out <- list(SStotal_BDtotal=res$SStotal_BDtotal, LCBD=res$LCBD,  
-                  p.LCBD=p.LCBD, method=c(method,note.sqrt.D), note=note, D=D)
-    }
-    #
-  })
-  aa[3] <- sprintf("%2f",aa[3])
-  if(clock) cat("Time for computation =",aa[3]," sec\n")
-  #
-  class(out) <- "beta.div"
-  out
-}
-
-RuzickaD <- function(Y)
-  #
-  # Compute the Ruzicka dissimilarity = (B+C)/(A+B+C) (quantitative form of Jaccard).
-  #
-  # License: GPL-2 
-  # Author:: Pierre Legendre, April 2015
-{
-  n = nrow(Y)
-  mat.sq = matrix(0, n, n)
-  # A = W = sum of minima in among-site comparisons
-  # B = sum_site.1 - W = K[1] - W   # sum of differences for sp(site1) > sp(site2)
-  # C = sum_site.2 - W = K[2] - W   # sum of differences for sp(site2) > sp(site1)
-  W <- matrix(0,n,n)          # matrix that will receive the sums of minima (A)
-  K <- apply(Y,1,sum)         # row sums: (A+B) or (A+C)
-  for(i in 2:n) for(j in 1:(i-1)) W[i,j] <- sum(pmin(Y[i,], Y[j,])) # sums of minima (A)
-  for(i in 2:n) {
-    for(j in 1:(i-1)) {
-      mat.sq[i,j]<-(K[i]+K[j]-2*W[i,j])/(K[i]+K[j]-W[i,j]) } # (B+C)/(A+B+C)
-  }
-  mat = as.dist(mat.sq)
-}
-
-D11 <- function(Y, algo=1)
-  #
-  # Compute Clark's coefficient of divergence. This is
-  # coefficient D11 in Legendre and Legendre (2012, eq. 7.51).
-  #
-  # License: GPL-2 
-  # Author:: Pierre Legendre, April 2011
-{
-  Y <- as.matrix(Y)
-  n <- nrow(Y)
-  p <- ncol(Y)
-  # Prepare to divide by pp = (p-d) = no. species present at both sites
-  Y.ap <- 1 - decostand(Y, "pa")
-  d <- Y.ap %*% t(Y.ap)
-  pp <- p-d   # n. species present at the two compared sites
-  #
-  if(algo==1) {   # Faster algorithm
-    D <- matrix(0, n, n)
-    for(i in 2:n) {
-      for(j in 1:(i-1)) {
-        num <- (Y[i,]-Y[j,])
-        den <- (Y[i,]+Y[j,])
-        sel <- which(den > 0)
-        D[i,j] = sqrt(sum((num[sel]/den[sel])^2)/pp[i,j])
-      }
-    }
-    #
-  } else {   # Slower algorithm 
-    D <- matrix(0, n, n)
-    for(i in 2:n) {
-      for(j in 1:(i-1)) {
-        temp = 0
-        for(p2 in 1:p) {
-          den = Y[i,p2] + Y[j,p2]
-          if(den > 0) {
-            temp = temp + ((Y[i,p2] - Y[j,p2])/den)^2
-          }
-        }
-        D[i,j] = sqrt(temp/pp[i,j])
-      }
-    }
-    #
-  }	
-  DD <- as.dist(D)
-}
-
-D19 <- function(Y)
-  #
-  # Compute the Modified mean character difference. This is
-  # coefficient D19 in Legendre and Legendre (2012, eq. 7.46).
-  # Division is by pp = number of species present at the two compared sites
-  #
-  # License: GPL-2 
-  # Author:: Pierre Legendre, April 2011
-{
-  Y <- as.matrix(Y)
-  n <- nrow(Y)
-  p <- ncol(Y)
-  # Prepare to divide by pp = (p-d) = n. species present at both sites
-  Y.ap <- 1 - decostand(Y, "pa")
-  d <- Y.ap %*% t(Y.ap)
-  pp <- p-d   # n. species present at the two compared sites
-  #
-  D <- vegdist(Y, "manhattan")
-  DD <- as.dist(as.matrix(D)/pp)
-}
-
-WishartD <- function(Y)
-  #
-  # Compute dissimilarity = (1 - Wishart similarity ratio) (Wishart 1969).
-  #
-  # License: GPL-2 
-  # Author:: Pierre Legendre, August 2012
-{
-  CP = crossprod(t(Y))
-  SS = apply(Y^2,1,sum)
-  n = nrow(Y)
-  mat.sq = matrix(0, n, n)
-  for(i in 2:n) {
-    for(j in 1:(i-1)) { mat.sq[i,j] = CP[i,j]/(SS[i] + SS[j] - CP[i,j]) }
-  }
-  mat = 1 - as.dist(mat.sq)
-}
-
-chao <- function(mat, coeff="Jaccard", samp=TRUE)
-  #
-  # Compute Chao et al. (2006) abundance-based indices.
-  #
-  # Arguments -
-  # mat = data matrix, species abundances
-  # coef = "Jaccard" : modified abundance-based Jaccard index
-  #        "Sorensen": modified abundance-based Sørensen index
-  #        "Ochiai"  : modified abundance-based Ochiai index
-  #        "Simpson" : modified abundance-based Simpson index
-  # samp=TRUE : Compute dissimilarities for sample data
-  #     =FALSE: Compute dissimilarities for true population data
-#
-# Details -
-# For coeff="Jaccard", the output values are identical to those
-# produced by vegan's function vegdist(mat, "chao").
-#
-# Help received from A. Chao and T. C. Hsieh in July 2012 for the computation  
-# of dissimilarities for true population data is gratefully acknowledged.
-#
-# Reference --
-# Chao, A., R. L. Chazdon, R. K. Colwell and T. J. Shen. 2006. 
-# Abundance-based similarity indices and their estimation when there 
-# are unseen species in samples. Biometrics 62: 361–371.
-#
-# License: GPL-2 
-# Author:: Pierre Legendre, July 2012
-{
-  require(vegan)
-  nn = nrow(mat)
-  res = matrix(0,nn,nn)
-  if(samp) {   # First for sample data
-    for(k in 2:nn) {
-      for(j in 1:(k-1)) {
-        #cat("k =",k,"  j =",j,"\n")
-        v1 = mat[j,]   # Vector 1
-        v2 = mat[k,]   # Vector 2
-        v1.pa = decostand(v1,"pa")   # Vector 1 in presence-absence form
-        v2.pa = decostand(v2,"pa")   # Vector 2 in presence-absence form
-        N.j = sum(v1)   # Sum of abundances in vector 1
-        N.k = sum(v2)   # Sum of abundances in vector 2
-        shared.sp = v1.pa * v2.pa   # Vector of shared species ("pa")
-        if(sum(shared.sp) == 0) { 
-          res[k,j] = 1
-        } else {
-          C.j = sum(shared.sp * v1)   # Sum of shared sp. abundances in v1
-          C.k = sum(shared.sp * v2)   # Sum of shared sp. abundances in v2
-          # a1.j = sum(shared.sp * v1.pa)
-          # a1.k = sum(shared.sp * v2.pa)
-          a1.j = length(which((shared.sp * v2) == 1)) # Singletons in v2
-          a1.k = length(which((shared.sp * v1) == 1)) # Singletons in v1
-          a2.j = length(which((shared.sp * v2) == 2)) # Doubletons in v2
-          if(a2.j == 0) a2.j <- 1
-          a2.k = length(which((shared.sp * v1) == 2)) # Doubletons in v1
-          if(a2.k == 0) a2.k <- 1
-          # S.j = sum(v1[which(v2 == 1)]) # Sum abund. in v1 for singletons in v2
-          # S.k = sum(v2[which(v1 == 1)]) # Sum abund. in v2 for singletons in v1
-          sel2 = which(v2 == 1)
-          sel1 = which(v1 == 1)
-          if(length(sel2)>0) S.j = sum(v1[sel2]) else S.j = 0
-          if(length(sel1)>0) S.k = sum(v2[sel1]) else S.k = 0
-          
-          U.j = (C.j/N.j) + ((N.k-1)/N.k) * (a1.j/(2*a2.j)) * (S.j/N.j) # Eq. 11
-          if(U.j > 1) U.j <- 1
-          U.k = (C.k/N.k) + ((N.j-1)/N.j) * (a1.k/(2*a2.k)) * (S.k/N.k) # Eq. 12
-          if(U.k > 1) U.k <- 1
-          
-          if(coeff == "Jaccard") {                     # "Jaccard"
-            res[k,j] = 1 - (U.j*U.k/(U.j + U.k - U.j*U.k))
-          } else if(coeff == "Sorensen") {         # "Sorensen"
-            res[k,j] = 1 - (2*U.j*U.k/(U.j + U.k))
-          } else if(coeff == "Ochiai") {           # "Ochiai"
-            res[k,j] = 1 - (sqrt(U.j*U.k))
-          } else if(coeff == "Simpson") { 
-            # Simpson (1943), or Lennon et al. (2001) in Chao et al. (2006)
-            res[k,j] = 1 -
-              (U.j*U.k/(U.j*U.k+min((U.j-U.j*U.k),(U.k-U.j*U.k))))
-          } else { # 
-            stop("Incorrect coefficient name")
-          }
-        }
-      }
-    }
-    
-  } else {   # Now for complete population data
-    
-    for(k in 2:nn) {
-      for(j in 1:(k-1)) {
-        v1 = mat[j,]   # Vector 1
-        v2 = mat[k,]   # Vector 2
-        v1.pa = decostand(v1,"pa")   # Vector 1 in presence-absence form
-        v2.pa = decostand(v2,"pa")   # Vector 2 in presence-absence form
-        shared.sp = v1.pa * v2.pa    # Vector of shared species ("pa")
-        if(sum(shared.sp) == 0) { 
-          res[k,j] = 1
-        } else {
-          N1 = sum(v1)   # Sum of abundances in vector 1
-          N2 = sum(v2)   # Sum of abundances in vector 2
-          U = sum(shared.sp * v1)/N1   # Sum of shared sp. abundances in v1
-          V = sum(shared.sp * v2)/N2   # Sum of shared sp. abundances in v2
-          
-          if(coeff == "Jaccard") {                     # "Jaccard"
-            res[k,j] = 1 - (U*V/(U + V - U*V))
-          } else if(coeff == "Sorensen") {         # "Sorensen"
-            res[k,j] = 1 - (2*U*V/(U + V))
-          } else if(coeff == "Ochiai") {           # "Ochiai"
-            res[k,j] = 1 - (sqrt(U*V))
-          } else if(coeff == "Simpson") { # "Simpson"
-            res[k,j] = 1 - (U*V/(U*V+min((U-U*V),(V-U*V)))) # Eq. ?
-          } else { # 
-            stop("Incorrect coefficient name")
-          }
-        }
-      }
-    }
-  }
-  res <- as.dist(res)
-}
-
-######## End of beta.div function

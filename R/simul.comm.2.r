@@ -20,7 +20,7 @@
 #' @param based.on should the sampling of species from species pool be based on \code{'individuals'} or \code{'species'}? (default = \code{'individuals'})
 #' @param standardize.rowsums Standardizes the abundances of species in samples so as the sum of species abundances in sample is 100 (standardizes to rowsums equal to 100). Applies only if \code{pa = FALSE}. Default = \code{TRUE}.
 #' @examples
-#' sc <- sample.comm.2 (simul.comm.2 (gr1.length = 5000, gr2.length = 3000, totS = 300),
+#' sc <- sample.comm.2 (simul.comm.2 (gr1.length = 5000, gr2.length = 3000, totS = 100),
 #'  Np = 200, pa = FALSE, seed = 123)
 #' library (vegan)
 #' nmds <- metaMDS (sc$a.mat)
