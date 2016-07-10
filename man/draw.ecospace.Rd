@@ -38,7 +38,7 @@ draw.ecospace(sampled.comm, resolution = 200, colors = NULL,
 Draws ecospace with species response surface for two dimensional simulated data
 }
 \examples{
-library (genspe)
+library (theta)
 draw.ecospace (sample.comm.2 (simul.comm.2 (totS = 100)), resolution = 100)
 }
 \author{

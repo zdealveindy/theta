@@ -199,7 +199,7 @@ if (pa.transform) input.matrix <- ifelse (input.matrix > 0, 1, 0)
   theta.out <- do.call (rbind.data.frame, temp.res)
   rownames (theta.out) <- NULL
   
-  if (ncol (theta.out) == 9) names (theta.out) <- c ('sci.name', 'local.avgS', 'occur.freq', 'meanco', 'meanco.sd', 'meanco.u', 'meanco.l', 'theta', 'theta.sd') else names (theta.out) <- c ('sci.name', 'local.avgS', 'occur.freq', 'meanco', 'theta')
+  names (theta.out) <- c ('sci.name', 'local.avgS', 'occur.freq', 'meanco', 'theta', 'theta.sd')
   theta.out$sci.name <- as.character (theta.out$sci.name)  # otherwise this column would be factor, which may cause troubles
   if (!is.null (species.data)) theta.out <- as.data.frame (cbind (sci.name = theta.out[,1], species.data[as.character (theta.out[,'sci.name']),1:2], theta.out[,-1]))
   if (juicer) write.table (theta.out, file = 'theta_out.txt', sep = '\t', qmethod = 'double', col.names = T, row.names = F) else return (theta.out)
@@ -263,9 +263,9 @@ calculate.theta.0 <- function (temp.matrix, sci.name, sp, remove.out, out.metric
     local.avgS <- mean(mean.alpha)				#approximate mean local richness
     occur.freq <- nrow (temp.matrix)							#total number of plots
     
-    meanco.u <- qnorm(.975,mean=meanco,sd=meanco.sd)			#97.5% confidence limit
-    meanco.l <- qnorm(.025,mean=meanco,sd=meanco.sd)			#2.5% confidence limit
-    result <- list(sci.name, local.avgS, occur.freq, meanco, meanco.sd, meanco.u, meanco.l, theta, theta.sd)
+#    meanco.u <- qnorm(.975,mean=meanco,sd=meanco.sd)			#97.5% confidence limit
+#    meanco.l <- qnorm(.025,mean=meanco,sd=meanco.sd)			#2.5% confidence limit
+    result <- list(sci.name, local.avgS, occur.freq, meanco, theta, theta.sd)
     return (result)
     }
   }
@@ -287,7 +287,7 @@ calculate.theta.0 <- function (temp.matrix, sci.name, sp, remove.out, out.metric
       local.avgS <- mean.alpha				#approximate mean local richness
       occur.freq <- nrow (temp.matrix)							#total number of plots
       
-      result <- list(sci.name, local.avgS, occur.freq, meanco, theta)
+      result <- list(sci.name, local.avgS, occur.freq, meanco, theta, theta.sd = 0)
       return (result)
     }
   }
@@ -298,11 +298,10 @@ calculate.theta.0 <- function (temp.matrix, sci.name, sp, remove.out, out.metric
     {
       theta <- beta.raref (comm = temp.matrix, sites = psample)  # contains also sd
       total.rich <- sum (colSums (temp.matrix) > 0)
-      meanco <- total.rich			#mean cooccurrences in "psample" plots
-      sci.name <- sci.name	#scientific name
+      meanco <- total.rich			#number of co-occurring species in the subset
       local.avgS <- theta$alpha				#approximate mean local richness
       occur.freq <- nrow (temp.matrix)
-      result <- list(sci.name, local.avgS, occur.freq, meanco, theta = theta$true.beta, theta.sd = theta$tb.sd)
+      result <- list(sci.name, local.avgS, occur.freq, meanco, theta$true.beta, theta$tb.sd)
       return (result)
     }
   }
@@ -443,6 +442,7 @@ beta.raref <- function (comm, sites, conditioned = TRUE, gamma = 'jack1')
   x <- x[, colSums(x) > 0, drop = FALSE]
   n <- nrow(x)
   p <- ncol(x)
+  alpha <- mean (rowSums (x > 0))
   if (p == 1) {
     x <- t(x)
     n <- nrow(x)
@@ -471,9 +471,10 @@ beta.raref <- function (comm, sites, conditioned = TRUE, gamma = 'jack1')
     sdaccum2 <- specaccum^2/Stot
     sdaccum <- sqrt(sdaccum1 - sdaccum2)
   }
-  out <- list(sites = sites, richness = specaccum, sd = sdaccum)
+  out <- list(sites = sites, richness = specaccum, sd = sdaccum, alpha = alpha, true.beta = specaccum/alpha, tb.sd = sdaccum/alpha)
   out
 }
+
 
 
 beta.div <- function(Y, method="hellinger", sqrt.D=FALSE, samp=TRUE, nperm=999, save.D=FALSE, clock=FALSE)

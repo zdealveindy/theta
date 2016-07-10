@@ -14,7 +14,7 @@
 #' @param ... Other arguments passed into the function \code{title}.
 #' @seealso \code{\link{simul.comm.2}}, \code{\link{sample.comm.2}}
 #' @examples
-#' library (genspe)
+#' library (theta)
 #' draw.ecospace (sample.comm.2 (simul.comm.2 (totS = 100)), resolution = 100)
 #' @rdname draw.ecospace
 #' @export
