@@ -29,6 +29,7 @@
 #' points (nmds, display = 'si', cex = scale (sc$sample.x1, center = FALSE)*2, pch = 21, bg = 'white')
 #' ordiplot (nmds, display = 'si', main = 'Environmental gradient 2')
 #' points (nmds, display = 'si', cex = scale (sc$sample.x2, center = FALSE)*2, pch = 21, bg = 'white')
+#' par (mfrow = c(1,1))
 #' @return The function \code{simul.comm.2} returns \code{list} with 18 items, describing the set of parameters used to simulate community of species response curves:
 #' \itemize{
 #' \item \code{totS} Total number of species in simulation.

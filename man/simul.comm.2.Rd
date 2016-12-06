@@ -84,6 +84,7 @@ ordiplot (nmds, display = 'si', main = 'Environmental gradient 1')
 points (nmds, display = 'si', cex = scale (sc$sample.x1, center = FALSE)*2, pch = 21, bg = 'white')
 ordiplot (nmds, display = 'si', main = 'Environmental gradient 2')
 points (nmds, display = 'si', cex = scale (sc$sample.x2, center = FALSE)*2, pch = 21, bg = 'white')
+par (mfrow = c(1,1))
 }
 \author{
 David Zeleny (zeleny.david@gmail.com) - based on the script of Jason Fridley (Fridley et al. 2007, Appendix S2), modified for two dimensions

@@ -85,7 +85,7 @@
 #' multi <- calculate.theta (sc$a.mat, method = 'multiplicative')
 #' beals <- calculate.theta (sc$a.mat, method = 'beals')
 #' bray <- calculate.theta (sc$a.mat, method = 'beta.div', 
-#'  beta.div.method = '%difference', beta.div.sqrt.D = TRUE)
+#'  beta.div.method = 'percentdiff', beta.div.sqrt.D = TRUE)
 #' # Visualize the relationship using function pairs with Spearmann's correlation 
 #' # in the boxes above diagonal (see Examples in ?pairs)
 #' panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)

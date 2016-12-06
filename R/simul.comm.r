@@ -69,7 +69,7 @@ simul.comm <- function (totS = 300, gr.length = 5000, niche.type = 'random', max
       } else
       if (spec.optima == 'skewed'){
         starting <- seq (1, gr.length, by = gr.length/10)
-        biased <- c(20, 40, 60, 80, 100, 120, 140, 160, 180, 200)/600 # keep the same structure as in Zeleny 2009, Appendix S1
+        biased <- c(20, 40, 60, 80, 100, 120, 140, 160, 180, 200)/1100 # keep the same structure as in Zeleny 2009, Appendix S1
         m <- NULL
         for (i in seq (1, 10))
           m <- append (m, sample (seq (starting[i], starting[i]+gr.length/10-1), round (biased[i]*totS)))
