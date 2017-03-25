@@ -42,4 +42,3 @@ mean (vegdist (decostand (sc$a.mat, 'pa')))
 \author{
 David Zeleny (zeleny.david@gmail.com). Heavily builds on the code from function \code{specaccum} in package \code{vegan} written by Roeland Kindt and Jari Oksanen to construct sample-based rarefaction curves.
 }
-

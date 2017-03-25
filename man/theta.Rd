@@ -11,4 +11,3 @@ theta - package for calculating and testing co-occurrence based measure of speci
 \author{
 David Zeleny
 }
-

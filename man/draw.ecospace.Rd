@@ -41,10 +41,9 @@ Draws ecospace with species response surface for two dimensional simulated data
 library (theta)
 draw.ecospace (sample.comm.2 (simul.comm.2 (totS = 100)), resolution = 100)
 }
-\author{
-David Zeleny (zeleny.david@gmail.com)
-}
 \seealso{
 \code{\link{simul.comm.2}}, \code{\link{sample.comm.2}}
 }
-
+\author{
+David Zeleny (zeleny.david@gmail.com)
+}
