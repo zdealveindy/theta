@@ -13,17 +13,18 @@
 #' \item \code{gamma.sd}: standard deviation of \code{gamma} estimate;
 #' \item \code{alpha}: mean number of species per sample (alpha diversity);
 #' \item \code{beta}: true beta diversity, calculated as \code{gamma / alpha};
-#' \item \code{beta.sd}: standard deviation of true beta diversity, calculated as \code{gamma.sd / alpha} (perhaps wrongand better not to use, needs proof!);
+#' \item \code{beta.sd}: standard deviation of true beta diversity, calculated as \code{gamma.sd / alpha} (perhaps wrong and better not to use, needs proof!);
 #' }
 #' @examples 
-#' sc <- sample.comm (simul.comm (totS = 100), Np= 100)
-#' beta.raref (comm = sc$a.mat, sites = 10)
+#' require (simcom)
+#' samcom <- sample.comm (simul.comm (S = 100), Np = 100)
+#' beta.raref (comm = samcom$a.mat, sites = 10)
 #' 
 #' # True beta diversity calculated on pair of samples (minus one) 
 #' # is very close to mean pairwise Sorensen:
-#' beta.raref (comm = sc$a.mat, sites = 2)$beta-1
+#' beta.raref (comm = samcom$a.mat, sites = 2)$beta-1
 #' library (vegan)
-#' mean (vegdist (decostand (sc$a.mat, 'pa')))
+#' mean (vegdist (decostand (samcom$a.mat, 'pa')))
 #' @importFrom vegan specpool
 #' @export
 beta.raref <- function (comm, sites, conditioned = TRUE, gamma = 'jack1')
@@ -61,5 +62,5 @@ beta.raref <- function (comm, sites, conditioned = TRUE, gamma = 'jack1')
     sdaccum <- sqrt(sdaccum1 - sdaccum2)
   }
   out <- list(sites = sites, gamma = specaccum, gamma.sd = sdaccum, alpha = alpha, beta = specaccum/alpha, beta.sd = sdaccum/alpha)
-  out
+  return (out)
 }

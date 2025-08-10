@@ -2,4 +2,3 @@
 #' @author David Zeleny
 #' @docType package
 #' @name theta
-NULL

@@ -2,32 +2,48 @@
 % Please edit documentation in R/calculate.theta.R
 \name{calculate.theta}
 \alias{calculate.theta}
-\alias{calculate.theta}
 \alias{calculate.theta.0}
-\alias{calculate.theta}
-\alias{calculate.theta.tcltk}
-\alias{calculate.theta}
 \alias{beals.2}
 \title{Co-occurrence based metric of species habitat specialization}
 \usage{
-calculate.theta(input.matrix, species.data = NULL, thresh = 5,
-  psample = 5, reps = 10, method = "multiplicative", q = 0,
-  rarefaction = TRUE, beta.div.method = "hellinger",
-  beta.div.sqrt.D = FALSE, beta.div.samp = TRUE, beals.file = NULL,
-  pa.transform = FALSE, force.subsample = FALSE, parallel = FALSE,
-  no.cores = 2, remove.out = F, out.metric = "sorensen", verbal = F,
-  juicer = F, tcltk = F)
+calculate.theta(
+  comm,
+  species.data = NULL,
+  thresh = 5,
+  psample = 5,
+  reps = 10,
+  method = "multiplicative",
+  q = 0,
+  rarefaction = TRUE,
+  beals.file = NULL,
+  pa.transform = FALSE,
+  force.subsample = FALSE,
+  parallel = FALSE,
+  no.cores = 2,
+  remove.out = F,
+  out.metric = "sorensen"
+)
 
-calculate.theta.0(temp.matrix, sci.name, sp, remove.out, out.metric, thresh,
-  psample, reps, method, rarefaction, q, beta.div.method, beta.div.sqrt.D,
-  beta.div.samp, force.subsample, parallel, win.pb, verbal, juicer)
+calculate.theta.0(
+  temp.matrix,
+  sci.name,
+  sp,
+  remove.out,
+  out.metric,
+  thresh,
+  psample,
+  reps,
+  method,
+  rarefaction,
+  q,
+  force.subsample,
+  parallel
+)
 
-calculate.theta.tcltk(input.matrix, species.data = NULL, juicer = T)
-
-beals.2(x, include = TRUE, verbal = FALSE)
+beals.2(x, include = TRUE)
 }
 \arguments{
-\item{input.matrix}{Community data (\code{matrix} or \code{data.frame}, samples x species). If data are not presence-absence, the matrix will be automatically transformed into presence-absence and warning will be printed.}
+\item{comm}{Community data (\code{matrix} or \code{data.frame}, samples x species). If data are not presence-absence, the matrix will be automatically transformed into presence-absence and warning will be printed.}
 
 \item{species.data}{Species data (\code{matrix} or \code{data.frame}). If suplied, it should have at least two columns - the first containing species name, the second containing layer.}
 
@@ -37,23 +53,17 @@ beals.2(x, include = TRUE, verbal = FALSE)
 
 \item{reps}{Number of random subsamples. Specifies how many times the fixed number of samples (specified by \code{psample}) will be randomly drawn from all samples containing target species. Default = \code{10}.}
 
-\item{method}{Beta-diversity algorithm used to calculate theta measure. Partial match to \code{'additive'}, \code{'multiplicative'}, \code{'pairwise.jaccard'}, \code{'pairwise.sorensen'}, \code{'pairwise.simpson'}, \code{'multi.sorensen'}, \code{'multi.simpson'}, \code{'rao'}, \code{'beals'} and \code{'beta.div'}). See Details for available options.}
+\item{method}{Beta-diversity algorithm used to calculate theta measure. Partial match to \code{'additive'}, \code{'multiplicative'}, \code{'pairwise.jaccard'}, \code{'pairwise.sorensen'}, \code{'pairwise.simpson'}, \code{'multi.sorensen'}, \code{'multi.simpson'}, \code{'rao'}, \code{'beals'}). See Details for available options.}
 
 \item{q}{Generalization of Whittaker's multiplicative beta diversity for abundance data (only if \code{method = 'multiplicative'}).}
 
 \item{rarefaction}{Logical value, which applies for \code{method = 'multiplicative'} and \code{q = 0}: should the Whittaker's multiplicative beta be calculated by rarefaction (\code{rarefaction = TRUE}) or by subsampling (\code{rarefaction = FALSE})? Default = \code{TRUE}.}
 
-\item{beta.div.method}{Argument for the function \code{beta.div}, if the \code{method = 'beta.div'}. See Details.}
-
-\item{beta.div.sqrt.D}{Argument for the function \code{beta.div}, if the \code{method = 'beta.div'}. See Details.}
-
-\item{beta.div.samp}{Argument for the function \code{beta.div}, if the \code{method = 'beta.div'}. See Details.}
-
 \item{beals.file}{Contains pre-calculated matrix of species co-occurrences. Can be used if \code{method = 'beals'} to speed up repeated calculation.}
 
-\item{pa.transform}{Logical; should the compositional data be transformed into presence-absence form? This choice applies only if \code{method} is \code{"rao"} or \code{"beta.div"}, since the other methods must be calculated on presence-absence data only (for these methods the matrix is automatically transformed into p/a form).}
+\item{pa.transform}{Logical; should the compositional data be transformed into presence-absence form? This choice applies only if \code{method} is \code{"rao"}, since the other methods must be calculated on presence-absence data only (for these methods the matrix is automatically transformed into p/a form).}
 
-\item{force.subsample}{Logical; should the subsampling be forced even for beta diversity metrics which are not influenced by sample size (\code{c('pairwise.jaccard', 'pairwise.sorensen', 'pairwise.simpson', 'rao', 'beta.div')})? Default behaviour is \code{force.subsample = FALSE}, meaning that beta diversity metrics dependent on sample size (\code{method = c('additive', 'multiplicative', 'beals', 'multi.sorensen', 'multi.simpson')}) will subsample number of plots equal to \code{psample}, while method not dependent on sample size (\code{method = c('pairwise.jaccard', 'pairwise.sorensen', 'pairwise.simpson', 'beta.div')}) will be calculated using all plots containing target species. If \code{force.subsample = TRUE}, even methods not dependent on sample size will be calculated using subsampling.}
+\item{force.subsample}{Logical; should the subsampling be forced even for beta diversity metrics which are not influenced by sample size (\code{c('pairwise.jaccard', 'pairwise.sorensen', 'pairwise.simpson', 'rao')})? Default behaviour is \code{force.subsample = FALSE}, meaning that beta diversity metrics dependent on sample size (\code{method = c('additive', 'multiplicative', 'beals', 'multi.sorensen', 'multi.simpson')}) will subsample number of plots equal to \code{psample}, while method not dependent on sample size (\code{method = c('pairwise.jaccard', 'pairwise.sorensen', 'pairwise.simpson')}) will be calculated using all plots containing target species. If \code{force.subsample = TRUE}, even methods not dependent on sample size will be calculated using subsampling.}
 
 \item{parallel}{Logical; should be the parallel calculation used?}
 
@@ -63,19 +73,11 @@ beals.2(x, include = TRUE, verbal = FALSE)
 
 \item{out.metric}{Dissimilarity metric used to calculate outliers which should be removed (\code{out.metric = c('sorensen', 'euclidean', 'binary.euclidean')}). Default value is \code{'sorensen'}, which is compatible with Whittaker's multiplicative beta; if using other \code{method}, consider to change it into \code{'binary.euclidean'} recommended by Botta-Dukat (2012).}
 
-\item{verbal}{Logical; if \code{TRUE}, tcltk progress bar will popup during the calculation.}
-
-\item{juicer}{Logical argument specific for launching the function from JUICE software; logical (default = F) - is the function launched from JUICE? If \code{juicer = TRUE}, function is expecting that \code{species.data} have JUICE-specific structure, which enables to import data back to JUICE.}
-
-\item{tcltk}{Logical argument specific for launching the function from JUICE sofware.}
-
 \item{temp.matrix}{Internal argument; matrix with species composition of plots containing target species.}
 
 \item{sci.name}{Internal argument; the name of the species for which the current calculation is done.}
 
 \item{sp}{Internal argument; the order of the species for which the current calculation is done.}
-
-\item{win.pb}{Internal argument.}
 
 \item{x}{Internal argument of \code{beals.2} function; input compositional matrix.}
 
@@ -95,16 +97,26 @@ The function \code{calculate.theta} returns data.frame, with species in rows and
 }
 }
 \description{
-Set of functions for estimating species niche breadth based on compositional data using co-occurrence based \emph{theta} metric introduced by Fridley et al. (2007).
+A set of functions for estimating species niche breadth, based on species composition dataset using co-occurrence-based \emph{theta} metric. Introduced by Fridley et al. (2007).
+}
+\details{
+\describe{
+Function \code{calculate.theta} calculates theta metric of species habitat specialization using range of proposed beta diversity measures. It uses internal functions \code{calculate.theta.0}, \code{beals.2} (modified from the library \code{vegan} to calculate the sample species pool using Beals smoothing method).
+The function \code{calculate.theta} offers the following \code{method} argument to calculate beta diversity among samples:
+\item{\code{additive}}{This is the original algorithm published by Fridley et al. (2007), in which beta diversity among samples containing given species is calculated by additive beta diversity measure.}
+\item{\code{multiplicative}}{This is the default method, which uses the multiplicative Whittaker's measure of beta diversity instead of the original additive measure, as suggested by Zeleny (2009). Two options are available - using rarefaction of true beta diversity (if \code{rarefaction = TRUE}) to given number of samples (argument \code{psample}), or by repeated subsampling of \code{psample} from the dataset \code{reps}-times (if \code{rarefaction = FALSE}); both methods give comparable results, and the rarefaction one is usually more efficient. Modification of argument \code{q} calculates multiplicative beta diversity based on number equivalents (or number of effective species, Jost 2007). \code{q = 0} calculates Whittaker's beta, which weights all species equally (meaning that rare species, which are the most susceptible to undersampling, are weighted equally to abundant species); \code{q = 1} calculates number equivalents for Shannon diversity and \code{q = 2} for Simspon diversity. Uses function \code{d} from the packages \code{vegetarian}.}
+\item{\code{beals}}{Multiplicative beta on species pool. Algorithm suggested by Botta-Dukat (2012), calculating the beta diversity using species pool matrix instead of the original species data matrix. Species pool matrix is calculated using Beals smoothing method (invented by Ewald 2002). While the previous multiplicative beta diversity method gives unbiased results only in case of not-saturated communities, this method should give unbiased results also in case of saturated communities. See Zeleny (2009) and Botta-Dukat (2012) for detail discussion of this saturated/not-saturated communities issue. Argument \code{q} have no effect, since the recalculated species pool data are presence-absence only.}
+\item{\code{pairwise.jaccard}, \code{pairwise.sorensen}, \code{pairwise.simpson}, \code{multi.sorensen} and \code{multi.simpson}}{Mean pairwise Jaccard, Sorensen and Simpson dissimilarity, and multiple Sorensen and Simpson dissimilarity based on reccomendations of Manthey & Fridley (2009). Authors suggested that neither the original additive algorithm (introduced by Fridley et al. 2007), neither the modified version using the multiplicative beta diversity (Zeleny 2009) is the best solution, and introduced other alternatives, using pairwise or multiple site beta diversity algorithm. Mean pairwise Jaccard dissimilarity (or Sorensen and Simpson, respectively) is based on calculating mean of Jaccard (or Sorensen and Simpson, respectively) dissimilarities among all pairs of samples in each subset, while multiple Sorensen (or Simpson, respectively) is using multiple-site Sorensen (or Simpson, respectively) algorithm introduced by Baselga et al. (2007). Multiple-site Sorensen index is a linear function of Whittaker's beta diversity.}
+\item{\code{rao}}{Rao index of dissimilarity; this option has been introduced and used by Boulangeat et al. (2012). Advantage of Rao index is a possibility to incorporate known relationships among species using the among-species distance matrix. The formula used here is based on de Bello et al. (2010) \emph{beta.rao = (gamma - mean.alpha)/(1 - mean.alpha)} and is calculated by function \code{RaoRel} from package \code{cati}.}
+}
 }
 \examples{
-sc <- sample.comm (simul.comm (totS = 100), Np= 100)
-niches <- sc$simul.comm$range
+require (simcom)
+sc <- sample.comm (simul.comm (S = 100), Np= 100)
+niches <- sc$args.simcom$niche
 additive <- calculate.theta (sc$a.mat, method = 'add')
 multi <- calculate.theta (sc$a.mat, method = 'multiplicative')
 beals <- calculate.theta (sc$a.mat, method = 'beals')
-bray <- calculate.theta (sc$a.mat, method = 'beta.div', 
- beta.div.method = 'percentdiff', beta.div.sqrt.D = TRUE)
 # Visualize the relationship using function pairs with Spearmann's correlation 
 # in the boxes above diagonal (see Examples in ?pairs)
 panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
@@ -118,7 +130,7 @@ panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
   text(0.5, 0.5, txt, cex = cex.cor * r)
 }
 pairs (cbind (niches = niches[names (niches) \%in\% additive$sci.name], 
- additive = additive$theta, multi = multi$theta, beals = beals$theta, bray = bray$theta), 
+ additive = additive$theta, multi = multi$theta, beals = beals$theta), 
  upper.panel = panel.cor)
 }
 \references{
@@ -135,8 +147,6 @@ De Bello F., Lavergne S., Meynard C.N., Leps J. & Thuiller W. (2010): The partit
 Fridley J.D., Vandermast D.B., Kuppinger D.M., Manthey M. & Peet R.K. (2007): Co-occurrence based assessment of habitat generalists and specialists: a new approach for the measurement of niche width. \emph{Journal of Ecology}, 95: 707-722.
 
 Jost L. (2007): Partitioning diversity into independent alpha and beta components. \emph{Ecology}, 88: 2427-2439.
-
-Legendre P. & De Caceres M. (2013): Beta diversity as the variance of community data: dissimilarity coefficients and partitioning. \emph{Ecology Letters}, 16:951-963.
 
 Manthey M. & Fridley J.D. (2009): Beta diversity metrics and the estimation of niche width via species co-occurrence data: reply to Zeleny. \emph{Journal of Ecology}, 97: 18-22.
 
