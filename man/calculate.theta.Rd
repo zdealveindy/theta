@@ -16,7 +16,7 @@ calculate.theta(
   q = 0,
   rarefaction = TRUE,
   beals.file = NULL,
-  pa.transform = NULL,
+  pa.transform = FALSE,
   force.subsample = FALSE,
   parallel = FALSE,
   no.cores = 2,

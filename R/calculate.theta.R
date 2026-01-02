@@ -82,7 +82,7 @@
 #' @import utils
 #' @rdname calculate.theta
 #' @export
-calculate.theta <- function (comm, species.data = NULL, thresh = 5, psample = 5, reps = 10, method = "multiplicative", q = 0, rarefaction = TRUE, beals.file = NULL, pa.transform = NULL, force.subsample = FALSE, parallel = FALSE, no.cores = 2, remove.out = F, out.metric = 'euclidean') 
+calculate.theta <- function (comm, species.data = NULL, thresh = 5, psample = 5, reps = 10, method = "multiplicative", q = 0, rarefaction = TRUE, beals.file = NULL, pa.transform = FALSE, force.subsample = FALSE, parallel = FALSE, no.cores = 2, remove.out = F, out.metric = 'euclidean') 
 {
   METHODS <- c('additive', 'multiplicative', 'pairwise.jaccard', 'pairwise.sorensen', 'pairwise.simpson', 'multi.sorensen', 'multi.simpson', 'rao', 'beals')
   method.n <- pmatch(method, METHODS)
