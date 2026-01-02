@@ -4,14 +4,14 @@
 #' @param comm Community data (\code{matrix} or \code{data.frame}, samples x species). If data are not presence-absence, the matrix will be automatically transformed into presence-absence and warning will be printed.
 #' @param species.data Species data (\code{matrix} or \code{data.frame}). If suplied, it should have at least two columns - the first containing species name, the second containing layer. 
 #' @param thresh Minimal frequency of species. Habitat specialization will be calculated for species occurring in number of samples equal or higher than minimal frequency threshold. Default = \code{5}.
-#' @param psample Size of one random subsample (number of samples) for methods based on subsampling (argument \code{method = c('additive', 'multiplicative', 'multi.sorensen', 'multi.simpson', 'beals', 'rao')}). This value should not be higher than mimal frequency of species (argument \code{thresh}). For default setting (\code{method = 'multiplicative', rarefaction = TRUE} this value number of samples on rarefaction curve on which all the beta diversity calculation is standardized (euqivalent to number of subsamples). Default = \code{5}.
+#' @param psample Size of one random subsample (number of samples) for methods based on subsampling (argument \code{method = c('additive', 'multiplicative', 'multi.sorensen', 'multi.simpson', 'beals', 'rao')}). This value should not be higher than mimal frequency of species (argument \code{thresh}). For default setting (\code{method = 'multiplicative', rarefaction = TRUE} this value number of samples on rarefaction curve on which all the beta diversity calculation is standardized (equivalent to number of subsamples). Default = \code{5}.
 #' @param reps Number of random subsamples. Specifies how many times the fixed number of samples (specified by \code{psample}) will be randomly drawn from all samples containing target species. Default = \code{10}.
 #' @param method Beta-diversity algorithm used to calculate theta measure. Partial match to \code{'additive'}, \code{'multiplicative'}, \code{'pairwise.jaccard'}, \code{'pairwise.sorensen'}, \code{'pairwise.simpson'}, \code{'multi.sorensen'}, \code{'multi.simpson'}, \code{'rao'}, \code{'beals'}). See Details for available options.
 #' @param q Generalization of Whittaker's multiplicative beta diversity for abundance data (only if \code{method = 'multiplicative'}). 
 #' @param rarefaction Logical value, which applies for \code{method = 'multiplicative'} and \code{q = 0}: should the Whittaker's multiplicative beta be calculated by rarefaction (\code{rarefaction = TRUE}) or by subsampling (\code{rarefaction = FALSE})? Default = \code{TRUE}.
 #' @param beals.file Contains pre-calculated matrix of species co-occurrences. Can be used if \code{method = 'beals'} to speed up repeated calculation.
-#' @param pa.transform Logical; should the compositional data be transformed into presence-absence form? This choice applies only if \code{method} is \code{"rao"}, since the other methods must be calculated on presence-absence data only (for these methods the matrix is automatically transformed into p/a form).
-#' @param force.subsample Logical; should the subsampling be forced even for beta diversity metrics which are not influenced by sample size (\code{c('pairwise.jaccard', 'pairwise.sorensen', 'pairwise.simpson', 'rao')})? Default behaviour is \code{force.subsample = FALSE}, meaning that beta diversity metrics dependent on sample size (\code{method = c('additive', 'multiplicative', 'beals', 'multi.sorensen', 'multi.simpson')}) will subsample number of plots equal to \code{psample}, while method not dependent on sample size (\code{method = c('pairwise.jaccard', 'pairwise.sorensen', 'pairwise.simpson')}) will be calculated using all plots containing target species. If \code{force.subsample = TRUE}, even methods not dependent on sample size will be calculated using subsampling. 
+#' @param pa.transform Should the compositional data be transformed into presence-absence form? This argument applies only if \code{method} is \code{"rao"}, since this method can be meaningfully calculated with either presence absence or abundance data. For \code{method = 'multi'}, the data need to be presence-absence for \code{q = 0} (true beta diversity) and abundance for \code{q = 1} or \code{q = 2} (with presence-absence species values, the \code{q = 1 or 2} returns the same beta diversity as the method with \code{q = 0}). Other methods (Jaccard, Sorensen, Simpson) are calculated on species presences only.
+#' @param force.subsample Logical; should the subsampling be forced even for beta diversity metrics which are not influenced by sample size? Default behaviour is \code{force.subsample = FALSE}, meaning that beta diversity metrics dependent on sample size (\code{method = c('additive', 'multiplicative', 'beals', 'multi.sorensen', 'multi.simpson')}) will subsample number of plots equal to \code{psample}, while method not dependent on sample size (\code{method = c('pairwise.jaccard', 'pairwise.sorensen', 'pairwise.simpson', 'rao')}) will be calculated using all plots containing target species. If \code{force.subsample = TRUE}, all indices will be calculated using subsampling. 
 #' @param parallel Logical; should be the parallel calculation used?
 #' @param no.cores Number of cores (if \code{parallel = TRUE}). Note that in case of large datasets the calculation may be limited by RAM of the computer, and increasing number of cores may result in saturation of RAM and calculation collapse.
 #' @param remove.out Logical; should be the algorithm removing outliers (sensu Botta-Dukat 2012) applied? 
@@ -26,7 +26,7 @@
 #' Function \code{calculate.theta} calculates theta metric of species habitat specialization using range of proposed beta diversity measures. It uses internal functions \code{calculate.theta.0}, \code{beals.2} (modified from the library \code{vegan} to calculate the sample species pool using Beals smoothing method).
 #' The function \code{calculate.theta} offers the following \code{method} argument to calculate beta diversity among samples:
 #' \item{\code{additive}}{This is the original algorithm published by Fridley et al. (2007), in which beta diversity among samples containing given species is calculated by additive beta diversity measure.}
-#' \item{\code{multiplicative}}{This is the default method, which uses the multiplicative Whittaker's measure of beta diversity instead of the original additive measure, as suggested by Zeleny (2009). Two options are available - using rarefaction of true beta diversity (if \code{rarefaction = TRUE}) to given number of samples (argument \code{psample}), or by repeated subsampling of \code{psample} from the dataset \code{reps}-times (if \code{rarefaction = FALSE}); both methods give comparable results, and the rarefaction one is usually more efficient. Modification of argument \code{q} calculates multiplicative beta diversity based on number equivalents (or number of effective species, Jost 2007). \code{q = 0} calculates Whittaker's beta, which weights all species equally (meaning that rare species, which are the most susceptible to undersampling, are weighted equally to abundant species); \code{q = 1} calculates number equivalents for Shannon diversity and \code{q = 2} for Simspon diversity. Uses function \code{d} from the packages \code{vegetarian}.}
+#' \item{\code{multiplicative}}{This is the default method, which uses the multiplicative Whittaker's measure of beta diversity instead of the original additive measure, as suggested by Zeleny (2009). Two options are available - using rarefaction of true beta diversity (if \code{rarefaction = TRUE}) to given number of samples (argument \code{psample}), or by repeated subsampling of \code{psample} from the dataset \code{reps}-times (if \code{rarefaction = FALSE}); both methods give comparable results, and the rarefaction one is usually faster. Modification of argument \code{q} calculates multiplicative beta diversity based on number equivalents (or number of effective species, Jost 2007). \code{q = 0} calculates Whittaker's beta, which weights all species equally (meaning that rare species, which are the most susceptible to undersampling, are weighted equally to abundant species); \code{q = 1} calculates number equivalents for Shannon diversity and \code{q = 2} for Simspon diversity. Uses function \code{d} from the packages \code{vegetarian}.}
 #' \item{\code{beals}}{Multiplicative beta on species pool. Algorithm suggested by Botta-Dukat (2012), calculating the beta diversity using species pool matrix instead of the original species data matrix. Species pool matrix is calculated using Beals smoothing method (invented by Ewald 2002). While the previous multiplicative beta diversity method gives unbiased results only in case of not-saturated communities, this method should give unbiased results also in case of saturated communities. See Zeleny (2009) and Botta-Dukat (2012) for detail discussion of this saturated/not-saturated communities issue. Argument \code{q} have no effect, since the recalculated species pool data are presence-absence only.}
 #' \item{\code{pairwise.jaccard}, \code{pairwise.sorensen}, \code{pairwise.simpson}, \code{multi.sorensen} and \code{multi.simpson}}{Mean pairwise Jaccard, Sorensen and Simpson dissimilarity, and multiple Sorensen and Simpson dissimilarity based on reccomendations of Manthey & Fridley (2009). Authors suggested that neither the original additive algorithm (introduced by Fridley et al. 2007), neither the modified version using the multiplicative beta diversity (Zeleny 2009) is the best solution, and introduced other alternatives, using pairwise or multiple site beta diversity algorithm. Mean pairwise Jaccard dissimilarity (or Sorensen and Simpson, respectively) is based on calculating mean of Jaccard (or Sorensen and Simpson, respectively) dissimilarities among all pairs of samples in each subset, while multiple Sorensen (or Simpson, respectively) is using multiple-site Sorensen (or Simpson, respectively) algorithm introduced by Baselga et al. (2007). Multiple-site Sorensen index is a linear function of Whittaker's beta diversity.}
 #' \item{\code{rao}}{Rao index of dissimilarity; this option has been introduced and used by Boulangeat et al. (2012). Advantage of Rao index is a possibility to incorporate known relationships among species using the among-species distance matrix. The formula used here is based on de Bello et al. (2010) \emph{beta.rao = (gamma - mean.alpha)/(1 - mean.alpha)} and is calculated by function \code{RaoRel} from package \code{cati}.}
@@ -65,26 +65,13 @@
 #' Zeleny D. (2009): Co-occurrence based assessment of species habitat specialization is affected by the size of species pool: reply to Fridley et al. (2007). \emph{Journal of Ecology}, 97: 10-17.
 #' @examples
 #' require (simcom)
-#' sc <- sample.comm (simul.comm (S = 100), Np= 100)
+#' sc <- sample.comm (simul.comm (S = 100), Np = 100)
 #' niches <- sc$args.simcom$niche
 #' additive <- calculate.theta (sc$a.mat, method = 'add')
 #' multi <- calculate.theta (sc$a.mat, method = 'multiplicative')
 #' beals <- calculate.theta (sc$a.mat, method = 'beals')
-#' # Visualize the relationship using function pairs with Spearmann's correlation 
-#' # in the boxes above diagonal (see Examples in ?pairs)
-#' panel.cor <- function(x, y, digits = 2, prefix = "", cex.cor, ...)
-#' {
-#'   usr <- par("usr"); on.exit(par(usr))
-#'   par(usr = c(0, 1, 0, 1))
-#'   r <- abs(cor(x, y, method = 'spearman'))
-#'   txt <- format(c(r, 0.123456789), digits = digits)[1]
-#'   txt <- paste0(prefix, txt)
-#'   if(missing(cex.cor)) cex.cor <- 0.8/strwidth(txt)
-#'   text(0.5, 0.5, txt, cex = cex.cor * r)
-#' }
-#'pairs (cbind (niches = niches[names (niches) %in% additive$sci.name], 
-#'  additive = additive$theta, multi = multi$theta, beals = beals$theta), 
-#'  upper.panel = panel.cor)
+#' pairs (cbind (niches = niches[names (niches) %in% additive$sci.name], 
+#'  additive = additive$theta, multi = multi$theta, beals = beals$theta))
 #' @importFrom vegetarian d
 #' @import RColorBrewer
 #' @import simcom
@@ -95,12 +82,12 @@
 #' @import utils
 #' @rdname calculate.theta
 #' @export
-calculate.theta <- function (comm, species.data = NULL, thresh = 5, psample = 5, reps = 10, method = "multiplicative", q = 0, rarefaction = TRUE, beals.file = NULL, pa.transform = FALSE, force.subsample = FALSE, parallel = FALSE, no.cores = 2, remove.out = F, out.metric = 'sorensen') 
+calculate.theta <- function (comm, species.data = NULL, thresh = 5, psample = 5, reps = 10, method = "multiplicative", q = 0, rarefaction = TRUE, beals.file = NULL, pa.transform = NULL, force.subsample = FALSE, parallel = FALSE, no.cores = 2, remove.out = F, out.metric = 'euclidean') 
 {
   METHODS <- c('additive', 'multiplicative', 'pairwise.jaccard', 'pairwise.sorensen', 'pairwise.simpson', 'multi.sorensen', 'multi.simpson', 'rao', 'beals')
   method.n <- pmatch(method, METHODS)
   if (is.na (method.n)) stop ('Invalid name of beta-diversity algorithm')
-  if (method.n == -1) stop ('Ambiguous method')  # not sure what this means
+  if (method.n == -1) stop ('The method values equals to NA') 
   method <- METHODS[method.n]
   if (is.na (reps) || reps < 2) 
     stop ("Number of random subsamples must be integer >= 2")
@@ -113,7 +100,7 @@ calculate.theta <- function (comm, species.data = NULL, thresh = 5, psample = 5,
   if (!is.matrix (comm)) comm <- as.matrix (comm)  # if comm is dataframe, changes into matrix
   if (is.null (row.names (comm))) row.names (comm) <- seq (1, nrow (comm))  # if comm has no row.names, these are created as sequence of integers
 
-if (method %in% c('additive', 'multiplicative', 'pairwise.jaccard', 'pairwise.sorensen', 'pairwise.simpson', 'multi.sorensen', 'multi.simpson', 'beals')) pa.transform <- TRUE
+if (method %in% c('additive', 'pairwise.jaccard', 'pairwise.sorensen', 'pairwise.simpson', 'multi.sorensen', 'multi.simpson', 'beals') || (method %in% 'multiplicative' & q == 0)) pa.transform <- TRUE
 if (pa.transform) comm <- ifelse (comm > 0, 1, 0)
 
   # For which species to calculate theta metric:
@@ -193,16 +180,16 @@ if (pa.transform) comm <- ifelse (comm > 0, 1, 0)
 #' @name calculate.theta
 #' @export
 #' 
-calculate.theta.0 <- function (temp.matrix, sci.name, sp, remove.out, out.metric, thresh, psample, reps, method, rarefaction, q, force.subsample, parallel)
+calculate.theta.0 <- function (temp.matrix, sci.name, sp, remove.out, out.metric, thresh, psample, reps, method, rarefaction, q, pa.transform, force.subsample, parallel)
 {
   if (parallel) write (paste (sp, '\n'), file = 'GS-progress.txt', append = T)
   
   #performs outlier analysis sensu Botta-Dukat (2012):  
   if (remove.out)
   {
+    if (out.metric == 'euclidean') veg.dist <- as.matrix (dist (temp.matrix))
     if (out.metric == 'sorensen') veg.dist <- as.matrix (vegan::vegdist (temp.matrix > 0))
     if (out.metric == 'binary.euclidean') veg.dist <- as.matrix (dist (temp.matrix > 0))
-    if (out.metric == 'euclidean') veg.dist <- as.matrix (dist (temp.matrix))
     diag (veg.dist) <- NA
     distances <- rowMeans (veg.dist, na.rm = T)
     outliers <- distances > (mean (distances) + 2*sd (distances))
