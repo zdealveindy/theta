@@ -193,8 +193,8 @@ calculate.theta.0 <- function (temp.matrix, sci.name, sp, remove.out, out.metric
     diag (veg.dist) <- NA
     distances <- rowMeans (veg.dist, na.rm = T)
     outliers <- distances > (mean (distances) + 2*sd (distances))
-    temp.matrix <- temp.matrix[!outliers,]
-    temp.matrix <- temp.matrix[,colSums (temp.matrix) > 0]
+    temp.matrix <- temp.matrix[!outliers,, drop = FALSE]
+    temp.matrix <- temp.matrix[,colSums (temp.matrix) > 0, drop = FALSE]
   }
   
   # first method - use subsampling
